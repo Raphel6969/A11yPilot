@@ -1,0 +1,8 @@
+version: 1
+name: Check the demo form
+start: http://127.0.0.1:4173/
+options:
+  maxTabStops: 40
+  timeoutMs: 5000
+steps:
+  - expect: { role: button, name: "Run this journey" }

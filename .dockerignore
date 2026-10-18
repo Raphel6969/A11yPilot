@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-ui
+.git
+.opencode
+coverage
+playwright-report
+test-results
+*.log
