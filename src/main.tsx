@@ -1010,15 +1010,35 @@ function Docs() {
   const sections = [
     {
       title: "Getting started",
-      text: "Create a journey from a template, then run it with the keyboard.",
+      text: "Create a journey from a guided builder, a reusable template, or a validated YAML/JSON spec. Run it locally, then inspect the evidence-backed result.",
     },
     {
       title: "Journey format",
-      text: "Journey specs describe a start URL and ordered actions for a user task.",
+      text: "Journey specs contain version, name, start URL, options, and ordered steps. Targets use accessible role and name, never fragile CSS selectors.",
+    },
+    {
+      title: "Ways to create journeys",
+      text: "Guided creation is best for teams starting out. Templates provide common signup, checkout, dialog, and form-recovery flows. Import is best for specs already reviewed in a repository.",
+    },
+    {
+      title: "Oracle reference",
+      text: "Reachability, keyboard traps, focus visibility, name/role/value, form errors, status announcements, and focus management return pass, fail, or needs-review with a WCAG mapping.",
+    },
+    {
+      title: "Reports and exports",
+      text: "HTML is for people, JSON is for internal tooling, and SARIF is for code-scanning workflows. Every finding should retain its step, severity, recommendation, and evidence.",
     },
     {
       title: "Command line",
-      text: "Validate and run journeys in CI with the A11yPilot CLI.",
+      text: "Command line: Validate and run journeys in CI with the A11yPilot CLI. Use the exit code to block configured failures, upload HTML/JSON/SARIF as artifacts, and keep browser versions pinned in CI.",
+    },
+    {
+      title: "Privacy and limitations",
+      text: "A11yPilot runs locally and does not certify WCAG, ADA, or EAA compliance. Do not place passwords, cookies, tokens, or sensitive page content in specs or reports.",
+    },
+    {
+      title: "Troubleshooting",
+      text: "If a target is not found, verify its accessible role and name. If Chromium cannot launch, install the pinned Playwright browser or use the provided Docker image.",
     },
   ];
   const filtered = sections.filter((s) =>
