@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { journeySchema } from "../../src/spec/schema.js";
+import { journeySchema } from "../../packages/core/src/index.js";
 describe("journey schema", () => {
   it("accepts a keyboard journey", () => {
     const result = journeySchema.parse({

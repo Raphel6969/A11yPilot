@@ -2,13 +2,8 @@
 import { Command } from "commander";
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
-import { htmlReport } from "./reporters/html.js";
-import { jsonReport } from "./reporters/json.js";
-import { sarifReport } from "./reporters/sarif.js";
-import { PlaywrightKeyboardPage } from "./runner/playwright-page.js";
-import { runJourney } from "./runner/journey-runner.js";
-import { loadJourney } from "./spec/loader.js";
-
+import { htmlReport, jsonReport, sarifReport } from "@a11ypilot/reporters";
+import { loadJourney, runJourney } from "@a11ypilot/core";
 const program = new Command()
   .name("a11ypilot")
   .description("Keyboard journey accessibility evidence")
@@ -36,11 +31,7 @@ program
         throw new Error("format must be json, html, or sarif");
       const browser = await chromium.launch({ headless: !options.headed });
       try {
-        const result = await runJourney(
-          loaded.journey,
-          loaded.steps,
-          new PlaywrightKeyboardPage(await browser.newPage()),
-        );
+        const result = await runJourney(await browser.newPage(), loaded);
         const output =
           options.format === "html"
             ? htmlReport(result)

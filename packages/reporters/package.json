@@ -1,0 +1,24 @@
+{
+  "name": "@a11ypilot/reporters",
+  "version": "0.1.0",
+  "description": "JSON, HTML, and SARIF reporters for A11yPilot results",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@a11ypilot/core": "0.1.0"
+  }
+}

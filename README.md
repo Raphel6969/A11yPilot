@@ -103,7 +103,7 @@ To watch Chromium instead of running headlessly:
 
 ```bash
 npm run build:cli
-node dist/src/cli.js run journey.example.yml --headed
+node packages/cli/dist/cli.js run journey.example.yml --headed
 ```
 
 ## 🌍 Test any website
@@ -168,7 +168,7 @@ Use the accessible role and accessible name that a real user would encounter. Pr
 
 ```bash
 npm run build:cli
-node dist/src/cli.js validate journeys/checkout.yml
+node packages/cli/dist/cli.js validate journeys/checkout.yml
 ```
 
 Expected output:
@@ -180,13 +180,13 @@ Valid journey: journeys/checkout.yml
 ### 4. Run the journey
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml
+node packages/cli/dist/cli.js run journeys/checkout.yml
 ```
 
 Run in a visible browser while diagnosing a failure:
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml --headed
+node packages/cli/dist/cli.js run journeys/checkout.yml --headed
 ```
 
 The runner starts at `start`, presses `Tab` until each target is found or `maxTabStops` is exceeded, types or presses `Enter` where requested, and records the observed tab stops.
@@ -240,7 +240,7 @@ Each step must contain exactly one action. `role` and `name` are required for ta
 ### JSON
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml \
+node packages/cli/dist/cli.js run journeys/checkout.yml \
   --format json \
   --output artifacts/checkout.json
 ```
@@ -250,7 +250,7 @@ Best for storing complete machine-readable run data.
 ### HTML
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml \
+node packages/cli/dist/cli.js run journeys/checkout.yml \
   --format html \
   --output artifacts/checkout.html
 ```
@@ -260,7 +260,7 @@ Best for sharing evidence with product, QA, design, and accessibility reviewers.
 ### SARIF
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml \
+node packages/cli/dist/cli.js run journeys/checkout.yml \
   --format sarif \
   --output artifacts/checkout.sarif
 ```
@@ -291,7 +291,7 @@ A developer starts the app, runs one focused journey, and uses `--headed` when a
 
 ```bash
 npm run build:cli
-node dist/src/cli.js run journeys/login.yml --headed --format html --output login-debug.html
+node packages/cli/dist/cli.js run journeys/login.yml --headed --format html --output login-debug.html
 ```
 
 They inspect the tab-stop trace and fix the underlying markup, focus order, accessible name, or keyboard handler.
@@ -364,7 +364,7 @@ The image also contains the built CLI. For a journey that targets a service reac
 ```bash
 docker run --rm --network host \
   a11ypilot:local \
-  node dist/src/cli.js run /workspace/journeys/checkout.yml
+  node packages/cli/dist/cli.js run /workspace/journeys/checkout.yml
 ```
 
 In practice, mount or copy your journey files into the image and ensure the URL is reachable from the container network. Never put passwords, tokens, cookies, or personal data in journey files or reports.
@@ -409,12 +409,10 @@ That may be a real accessibility regression or an intentional label change. Revi
 ## 🗂️ Project layout
 
 ```text
+packages/core/              # journey schema/loader, runner, model, and oracles
+packages/reporters/         # JSON, HTML, and SARIF output
+packages/cli/                # validate and run commands (a11ypilot binary)
 src/
-├── cli.ts                  # validate and run commands
-├── runner/                 # keyboard navigator and Playwright bridge
-├── spec/                   # YAML loading and Zod validation
-├── oracles/                # deterministic reachability findings
-├── reporters/              # JSON, HTML, and SARIF output
 ├── main.tsx                # React demo/dashboard entry point
 └── styles.css              # dashboard styling
 scripts/run-e2e.mjs         # build, serve, and run the real-browser demo

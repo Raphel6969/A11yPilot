@@ -1,4 +1,4 @@
-import type { Finding } from "../result/model.js";
+import type { Finding } from "./model.js";
 export function reachabilityFinding(
   stepId: string,
   target: string,

@@ -1,8 +1,6 @@
-import type { Page } from "playwright";
-import type { Target } from "../spec/schema.js";
-import type { FocusStop, KeyboardPage } from "./keyboard-navigator.js";
-
-/** Observation-only Playwright bridge; all journey actions still use page.keyboard. */
+import type { Page } from "playwright-core";
+import type { Target } from "./schema.js";
+import type { FocusStop, KeyboardPage } from "./runner.js";
 export class PlaywrightKeyboardPage implements KeyboardPage {
   constructor(private readonly page: Page) {}
   keyboard = {

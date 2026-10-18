@@ -1,0 +1,28 @@
+{
+  "name": "@a11ypilot/core",
+  "version": "0.1.0",
+  "description": "Journey loading, execution, results, and accessibility oracles for A11yPilot",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "playwright-core": ">=1.48.0"
+  }
+}
