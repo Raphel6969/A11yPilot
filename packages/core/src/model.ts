@@ -13,6 +13,7 @@ export type Severity =
 export type Evidence = {
   tabStops: string[];
   focused?: string;
+  focusVisible?: boolean;
   screenshot?: string;
   accessibilitySnapshot?: string;
 };
@@ -42,6 +43,8 @@ export type ActionTrace = {
   durationMs: number;
   focus?: string;
   tabStops: string[];
+  screenshot?: string;
+  accessibilitySnapshot?: string;
 };
 export type JourneyResult = {
   schemaVersion: 1;

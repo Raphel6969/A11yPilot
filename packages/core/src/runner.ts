@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 import type { Page } from "playwright-core";
 import type { Journey, NormalizedStep, Target } from "./schema.js";
 import {
@@ -21,11 +22,13 @@ export interface KeyboardPage {
     type(text: string): Promise<void>;
   };
   activeFocus(): Promise<FocusStop | null>;
+  focusVisible?(): Promise<boolean | null>;
   observeTarget(
     target: Target,
   ): Promise<{ exists: boolean; focused: boolean; label: string }>;
   goto(url: string): Promise<void>;
   screenshot(path: string): Promise<void>;
+  accessibilitySnapshot?(): Promise<AxSnapshot | null>;
 }
 export class KeyboardNavigator {
   constructor(private readonly page: KeyboardPage) {}
@@ -79,6 +82,7 @@ async function executeJourney(
   page: KeyboardPage,
   browserPage: Page,
   oracles: Oracle[],
+  evidenceDir?: string,
 ): Promise<RunResult> {
   const started = Date.now();
   const navigator = new KeyboardNavigator(page);
@@ -91,6 +95,7 @@ async function executeJourney(
     const action =
       Object.keys(step.action).find((key) => key !== "goal") ?? "unknown";
     let target: Target | undefined;
+    let stepFindings: Finding[] = [];
     if ("goto" in step.action && step.action.goto)
       await page.goto(step.action.goto);
     else if ("expect" in step.action && step.action.expect) {
@@ -100,19 +105,18 @@ async function executeJourney(
         journey.options.maxTabStops,
       );
       stops.push(...reached.stops.map((s) => s.selector));
-      findings.push(
-        ...(await evaluateOracles(oracles, {
-          page: browserPage,
-          step,
-          stepIndex,
-          target,
-          reached: reached.reached,
-          tabStops: reached.stops,
-          focused: reached.focused,
-          before: emptySnapshot(),
-          after: emptySnapshot(),
-        })),
-      );
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        target,
+        reached: reached.reached,
+        tabStops: reached.stops,
+        focused: reached.focused,
+        focusVisible: page.focusVisible ? await page.focusVisible() : null,
+        before: emptySnapshot(),
+        after: emptySnapshot(),
+      });
     } else if ("type" in step.action && step.action.type) {
       target = step.action.type.target;
       const reached = await navigator.reach(
@@ -120,19 +124,18 @@ async function executeJourney(
         journey.options.maxTabStops,
       );
       stops.push(...reached.stops.map((s) => s.selector));
-      findings.push(
-        ...(await evaluateOracles(oracles, {
-          page: browserPage,
-          step,
-          stepIndex,
-          target,
-          reached: reached.reached,
-          tabStops: reached.stops,
-          focused: reached.focused,
-          before: emptySnapshot(),
-          after: emptySnapshot(),
-        })),
-      );
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        target,
+        reached: reached.reached,
+        tabStops: reached.stops,
+        focused: reached.focused,
+        focusVisible: page.focusVisible ? await page.focusVisible() : null,
+        before: emptySnapshot(),
+        after: emptySnapshot(),
+      });
       if (reached.reached) await navigator.type(step.action.type.text);
     } else if ("activate" in step.action && step.action.activate) {
       target = step.action.activate;
@@ -141,22 +144,38 @@ async function executeJourney(
         journey.options.maxTabStops,
       );
       stops.push(...reached.stops.map((s) => s.selector));
-      findings.push(
-        ...(await evaluateOracles(oracles, {
-          page: browserPage,
-          step,
-          stepIndex,
-          target,
-          reached: reached.reached,
-          tabStops: reached.stops,
-          focused: reached.focused,
-          before: emptySnapshot(),
-          after: emptySnapshot(),
-        })),
-      );
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        target,
+        reached: reached.reached,
+        tabStops: reached.stops,
+        focused: reached.focused,
+        focusVisible: page.focusVisible ? await page.focusVisible() : null,
+        before: emptySnapshot(),
+        after: emptySnapshot(),
+      });
       if (reached.reached) await navigator.press("Enter");
     } else if ("press" in step.action && step.action.press)
       await navigator.press(step.action.press.key);
+    const capture = evidenceDir && action !== "goto";
+    const evidence = capture
+      ? await captureStepEvidence(page, evidenceDir, stepIndex, step.id)
+      : undefined;
+    if (evidence) {
+      stepFindings = stepFindings.map((finding) => ({
+        ...finding,
+        evidence: {
+          ...finding.evidence,
+          screenshot: evidence.screenshot,
+          accessibilitySnapshot: evidence.accessibilitySnapshot,
+        },
+        screenshot: evidence.screenshot,
+        accessibilityTree: evidence.accessibilitySnapshot,
+      }));
+    }
+    findings.push(...stepFindings);
     traces.push({
       stepId: step.id,
       action,
@@ -164,6 +183,7 @@ async function executeJourney(
       startedAt: new Date().toISOString(),
       durationMs: Date.now() - stepStarted,
       tabStops: stops,
+      ...(evidence ?? {}),
     });
   }
   return {
@@ -191,5 +211,33 @@ export async function runJourney(
     new PlaywrightKeyboardPage(page),
     page,
     options.oracles ?? defaultOracles,
+    options.evidenceDir,
   );
+}
+
+async function captureStepEvidence(
+  page: KeyboardPage,
+  evidenceDir: string,
+  stepIndex: number,
+  stepId: string,
+): Promise<{ screenshot: string; accessibilitySnapshot?: string }> {
+  const safeId = stepId.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  const prefix = `${String(stepIndex + 1).padStart(3, "0")}-${safeId}`;
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const screenshot = join(evidenceDir, `${prefix}.png`);
+  const accessibilitySnapshot = join(evidenceDir, `${prefix}.ax.json`);
+  await mkdir(evidenceDir, { recursive: true });
+  await page.screenshot(screenshot);
+  const snapshot = page.accessibilitySnapshot
+    ? await page.accessibilitySnapshot()
+    : null;
+  if (snapshot !== null)
+    await writeFile(
+      accessibilitySnapshot,
+      `${JSON.stringify(snapshot, null, 2)}\n`,
+      "utf8",
+    );
+  return snapshot === null
+    ? { screenshot }
+    : { screenshot, accessibilitySnapshot };
 }

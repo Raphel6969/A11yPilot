@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultOracles,
+  focusVisibleOracle,
+  noKeyboardTrapOracle,
   reachabilityOracle,
   reachabilityFinding,
   stableFingerprint,
@@ -12,6 +14,15 @@ const step = {
 } as const;
 
 describe("evidence-backed oracle foundation", () => {
+  const context = {
+    page: undefined as never,
+    step,
+    stepIndex: 0,
+    target: step.action.expect,
+    before: { children: [] },
+    after: { children: [] },
+  };
+
   it("produces stable fingerprints for equivalent inputs", () => {
     expect(
       reachabilityFinding("step-001", 'button "Submit"', false, {}, 0)
@@ -40,6 +51,73 @@ describe("evidence-backed oracle foundation", () => {
       status: "fail",
       stepIndex: 0,
       evidence: { tabStops: ["#cancel"], focused: "#cancel" },
+    });
+  });
+
+  it("reports a repeated focus stop as a keyboard trap", () => {
+    const finding = noKeyboardTrapOracle.evaluate({
+      ...context,
+      reached: false,
+      tabStops: [{ selector: "#dialog" }, { selector: "#dialog" }],
+      focused: { selector: "#dialog" },
+    });
+    expect(finding).toMatchObject({
+      oracle: "no-keyboard-trap",
+      status: "fail",
+      wcag: ["2.1.2"],
+      evidence: { tabStops: ["#dialog", "#dialog"] },
+    });
+  });
+
+  it("keeps an incomplete non-repeating traversal at needs-review", () => {
+    const finding = noKeyboardTrapOracle.evaluate({
+      ...context,
+      reached: false,
+      tabStops: [{ selector: "#first" }, { selector: "#second" }],
+      focused: { selector: "#second" },
+    });
+    expect(finding).toMatchObject({
+      oracle: "no-keyboard-trap",
+      status: "needs-review",
+    });
+  });
+
+  it("reports captured visible focus as pass and absent focus styling as fail", () => {
+    const focused = { selector: "#submit" };
+    expect(
+      focusVisibleOracle.evaluate({
+        ...context,
+        reached: true,
+        tabStops: [focused],
+        focused,
+        focusVisible: true,
+      }),
+    ).toMatchObject({
+      oracle: "focus-visible",
+      status: "pass",
+      evidence: { focused: "#submit", focusVisible: true },
+    });
+    expect(
+      focusVisibleOracle.evaluate({
+        ...context,
+        reached: true,
+        tabStops: [focused],
+        focused,
+        focusVisible: false,
+      }),
+    ).toMatchObject({ oracle: "focus-visible", status: "fail" });
+  });
+
+  it("does not infer focus visibility when the browser state was not captured", () => {
+    const finding = focusVisibleOracle.evaluate({
+      ...context,
+      reached: true,
+      tabStops: [{ selector: "#submit" }],
+      focused: { selector: "#submit" },
+    });
+    expect(finding).toMatchObject({
+      oracle: "focus-visible",
+      status: "needs-review",
     });
   });
 });
