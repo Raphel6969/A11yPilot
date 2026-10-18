@@ -1,13 +1,35 @@
-export type Outcome = "pass" | "fail" | "needs-review";
-export type Severity = "info" | "warning" | "error" | "critical";
+export type Status = "pass" | "fail" | "needs-review";
+/** @deprecated Use Status. */
+export type Outcome = Status;
+export type Severity =
+  | "critical"
+  | "serious"
+  | "moderate"
+  | "minor"
+  // Compatibility values used by the original reachability report.
+  | "info"
+  | "warning"
+  | "error";
+export type Evidence = {
+  tabStops: string[];
+  focused?: string;
+  screenshot?: string;
+  accessibilitySnapshot?: string;
+};
 export type Finding = {
   id: string;
-  stepId: string;
   oracle: string;
-  outcome: Outcome;
+  status: Status;
   severity: Severity;
-  wcag?: string;
+  wcag: string[];
+  stepIndex: number;
   message: string;
+  fix?: string;
+  fingerprint: string;
+  evidence: Evidence;
+  // Compatibility aliases retained for existing consumers and reports.
+  stepId?: string;
+  outcome?: Outcome;
   recommendation?: string;
   screenshot?: string;
   accessibilityTree?: string;
@@ -21,7 +43,7 @@ export type ActionTrace = {
   focus?: string;
   tabStops: string[];
 };
-export type RunResult = {
+export type JourneyResult = {
   schemaVersion: 1;
   runId: string;
   startedAt: string;
@@ -31,14 +53,18 @@ export type RunResult = {
   traces: ActionTrace[];
   findings: Finding[];
 };
-export function statusFor(findings: Finding[]): RunResult["status"] {
+/** @deprecated Use JourneyResult. */
+export type RunResult = JourneyResult;
+export function statusFor(findings: Finding[]): JourneyResult["status"] {
   return findings.some(
     (f) =>
-      f.outcome === "fail" &&
-      (f.severity === "error" || f.severity === "critical"),
+      f.status === "fail" &&
+      (f.severity === "error" ||
+        f.severity === "critical" ||
+        f.severity === "serious"),
   )
     ? "blocked"
-    : findings.some((f) => f.outcome === "fail")
+    : findings.some((f) => f.status === "fail")
       ? "completed-with-barriers"
       : "completed";
 }

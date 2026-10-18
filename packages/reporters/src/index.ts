@@ -2,13 +2,13 @@ type ReporterResult = {
   journey: { name: string };
   status: string;
   findings: Array<{
-    stepId: string;
+    stepId?: string;
     oracle: string;
-    outcome: string;
+    outcome?: string;
     severity: string;
     message: string;
     id: string;
-    wcag?: string;
+    wcag?: string[];
   }>;
 };
 export function jsonReport(result: ReporterResult): string {
@@ -24,7 +24,7 @@ export function htmlReport(result: ReporterResult): string {
   const rows = result.findings
     .map(
       (f) =>
-        `<tr><td>${escape(f.stepId)}</td><td>${escape(f.oracle)}</td><td>${escape(f.outcome)}</td><td>${escape(f.severity)}</td><td>${escape(f.message)}</td></tr>`,
+        `<tr><td>${escape(f.stepId ?? "")}</td><td>${escape(f.oracle)}</td><td>${escape(f.outcome ?? "")}</td><td>${escape(f.severity)}</td><td>${escape(f.message)}</td></tr>`,
     )
     .join("");
   return `<!doctype html><meta charset="utf-8"><title>A11yPilot - ${escape(result.journey.name)}</title><h1>${escape(result.journey.name)}</h1><p>Status: <strong>${escape(result.status)}</strong></p><table><thead><tr><th>Step</th><th>Oracle</th><th>Outcome</th><th>Severity</th><th>Message</th></tr></thead><tbody>${rows}</tbody></table>`;

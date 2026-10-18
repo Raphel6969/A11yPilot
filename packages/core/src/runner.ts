@@ -1,8 +1,18 @@
 import { randomUUID } from "node:crypto";
 import type { Page } from "playwright-core";
 import type { Journey, NormalizedStep, Target } from "./schema.js";
-import { reachabilityFinding } from "./oracle.js";
-import { statusFor, type ActionTrace, type RunResult } from "./model.js";
+import {
+  defaultOracles,
+  type AxSnapshot,
+  type Oracle,
+  type OracleContext,
+} from "./oracle.js";
+import {
+  statusFor,
+  type ActionTrace,
+  type Finding,
+  type RunResult,
+} from "./model.js";
 import { PlaywrightKeyboardPage } from "./playwright-page.js";
 export type FocusStop = { selector: string; role?: string; name?: string };
 export interface KeyboardPage {
@@ -22,16 +32,20 @@ export class KeyboardNavigator {
   async reach(
     target: Target,
     maxStops: number,
-  ): Promise<{ reached: boolean; stops: FocusStop[] }> {
+  ): Promise<{
+    reached: boolean;
+    stops: FocusStop[];
+    focused: FocusStop | null;
+  }> {
     const stops: FocusStop[] = [];
     for (let i = 0; i < maxStops; i += 1) {
       await this.page.keyboard.press("Tab");
       const focus = await this.page.activeFocus();
       if (focus) stops.push(focus);
       if ((await this.page.observeTarget(target)).focused)
-        return { reached: true, stops };
+        return { reached: true, stops, focused: focus };
     }
-    return { reached: false, stops };
+    return { reached: false, stops, focused: null };
   }
   async type(text: string): Promise<void> {
     await this.page.keyboard.type(text);
@@ -42,22 +56,36 @@ export class KeyboardNavigator {
 }
 const targetText = (target: Target) => `${target.role} "${target.name}"`;
 export type RunJourneyOptions = {
-  oracles?: unknown[];
+  oracles?: Oracle[];
   evidenceDir?: string;
   baseline?: string;
 };
+
+async function evaluateOracles(
+  oracles: Oracle[],
+  context: OracleContext,
+): Promise<Finding[]> {
+  const results = await Promise.all(
+    oracles.map((oracle) => oracle.evaluate(context)),
+  );
+  return results.flatMap((result) =>
+    result === undefined ? [] : Array.isArray(result) ? result : [result],
+  );
+}
 
 async function executeJourney(
   journey: Journey,
   steps: NormalizedStep[],
   page: KeyboardPage,
+  browserPage: Page,
+  oracles: Oracle[],
 ): Promise<RunResult> {
   const started = Date.now();
   const navigator = new KeyboardNavigator(page);
   const traces: ActionTrace[] = [];
-  const findings = [];
+  const findings: Finding[] = [];
   await page.goto(journey.start);
-  for (const step of steps) {
+  for (const [stepIndex, step] of steps.entries()) {
     const stepStarted = Date.now();
     const stops: string[] = [];
     const action =
@@ -73,7 +101,17 @@ async function executeJourney(
       );
       stops.push(...reached.stops.map((s) => s.selector));
       findings.push(
-        reachabilityFinding(step.id, targetText(target), reached.reached),
+        ...(await evaluateOracles(oracles, {
+          page: browserPage,
+          step,
+          stepIndex,
+          target,
+          reached: reached.reached,
+          tabStops: reached.stops,
+          focused: reached.focused,
+          before: emptySnapshot(),
+          after: emptySnapshot(),
+        })),
       );
     } else if ("type" in step.action && step.action.type) {
       target = step.action.type.target;
@@ -83,7 +121,17 @@ async function executeJourney(
       );
       stops.push(...reached.stops.map((s) => s.selector));
       findings.push(
-        reachabilityFinding(step.id, targetText(target), reached.reached),
+        ...(await evaluateOracles(oracles, {
+          page: browserPage,
+          step,
+          stepIndex,
+          target,
+          reached: reached.reached,
+          tabStops: reached.stops,
+          focused: reached.focused,
+          before: emptySnapshot(),
+          after: emptySnapshot(),
+        })),
       );
       if (reached.reached) await navigator.type(step.action.type.text);
     } else if ("activate" in step.action && step.action.activate) {
@@ -94,7 +142,17 @@ async function executeJourney(
       );
       stops.push(...reached.stops.map((s) => s.selector));
       findings.push(
-        reachabilityFinding(step.id, targetText(target), reached.reached),
+        ...(await evaluateOracles(oracles, {
+          page: browserPage,
+          step,
+          stepIndex,
+          target,
+          reached: reached.reached,
+          tabStops: reached.stops,
+          focused: reached.focused,
+          before: emptySnapshot(),
+          after: emptySnapshot(),
+        })),
       );
       if (reached.reached) await navigator.press("Enter");
     } else if ("press" in step.action && step.action.press)
@@ -120,14 +178,18 @@ async function executeJourney(
   };
 }
 
+const emptySnapshot = (): AxSnapshot => ({ children: [] });
+
 export async function runJourney(
   page: Page,
   loaded: { journey: Journey; steps: NormalizedStep[] },
-  _options: RunJourneyOptions = {},
+  options: RunJourneyOptions = {},
 ): Promise<RunResult> {
   return executeJourney(
     loaded.journey,
     loaded.steps,
     new PlaywrightKeyboardPage(page),
+    page,
+    options.oracles ?? defaultOracles,
   );
 }

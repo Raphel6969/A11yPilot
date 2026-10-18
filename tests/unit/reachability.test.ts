@@ -6,6 +6,6 @@ it("creates deterministic blocking finding for unreachable targets", () => {
     id: "step-001-reachability",
     outcome: "fail",
     severity: "error",
-    wcag: "2.1.1",
+    wcag: ["2.1.1"],
   });
 });
