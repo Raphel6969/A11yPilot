@@ -16,6 +16,7 @@ A11yPilot is designed for front-end and QA teams, accessibility agencies, and pr
 
 ```bash
 npm ci
+npm run playwright:install
 npm run dev
 ```
 
@@ -32,6 +33,29 @@ node dist/src/cli.js run journey.example.yml --format sarif --output report.sari
 ```
 
 The runner uses keyboard events for journey actions and resolves targets by accessible role/name. Run only against sites you own or are authorized to test.
+
+### Run the real Playwright journey
+
+The CLI uses Playwright's Chromium launcher. Install the browser once and run the
+end-to-end check against the included production UI:
+
+```bash
+npm ci
+npm run playwright:install
+npm run test:e2e
+```
+
+`test:e2e` builds the CLI and UI, starts `vite preview` on a free local port,
+waits for the server, and runs `journey.example.yml` in a real headless
+Chromium process. To watch a journey, use:
+
+```bash
+npm run build:cli
+node dist/src/cli.js run journey.example.yml --headed
+```
+
+The Docker image uses the official Playwright base image, so Chromium is already
+available inside the container.
 
 ## Checks
 

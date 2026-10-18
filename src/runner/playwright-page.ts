@@ -29,21 +29,24 @@ export class PlaywrightKeyboardPage implements KeyboardPage {
   async observeTarget(
     target: Target,
   ): Promise<{ exists: boolean; focused: boolean; label: string }> {
-    return this.page
-      .getByRole(target.role as never, { name: target.name, exact: true })
-      .evaluate((element) => ({
-        exists: true,
-        focused: element === document.activeElement,
-        label:
-          element.getAttribute("aria-label") ??
-          element.textContent?.trim() ??
-          element.tagName.toLowerCase(),
-      }))
-      .catch(() => ({
+    const locator = this.page.getByRole(target.role as never, {
+      name: target.name,
+      exact: false,
+    });
+    if ((await locator.count()) === 0)
+      return {
         exists: false,
         focused: false,
         label: `${target.role} ${target.name}`,
-      }));
+      };
+    return locator.first().evaluate((element) => ({
+      exists: true,
+      focused: element === document.activeElement,
+      label:
+        element.getAttribute("aria-label") ??
+        element.textContent?.trim() ??
+        element.tagName.toLowerCase(),
+    }));
   }
   async screenshot(path: string): Promise<void> {
     await this.page.screenshot({ path, fullPage: true });
