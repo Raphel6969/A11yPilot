@@ -1,5 +1,17 @@
-import type { RunResult } from "@a11ypilot/core";
-export function jsonReport(result: RunResult): string {
+type ReporterResult = {
+  journey: { name: string };
+  status: string;
+  findings: Array<{
+    stepId: string;
+    oracle: string;
+    outcome: string;
+    severity: string;
+    message: string;
+    id: string;
+    wcag?: string;
+  }>;
+};
+export function jsonReport(result: ReporterResult): string {
   return JSON.stringify(result, null, 2);
 }
 const escape = (value: string) =>
@@ -8,7 +20,7 @@ const escape = (value: string) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-export function htmlReport(result: RunResult): string {
+export function htmlReport(result: ReporterResult): string {
   const rows = result.findings
     .map(
       (f) =>
@@ -17,7 +29,7 @@ export function htmlReport(result: RunResult): string {
     .join("");
   return `<!doctype html><meta charset="utf-8"><title>A11yPilot - ${escape(result.journey.name)}</title><h1>${escape(result.journey.name)}</h1><p>Status: <strong>${escape(result.status)}</strong></p><table><thead><tr><th>Step</th><th>Oracle</th><th>Outcome</th><th>Severity</th><th>Message</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
-export function sarifReport(result: RunResult): string {
+export function sarifReport(result: ReporterResult): string {
   return JSON.stringify(
     {
       version: "2.1.0",

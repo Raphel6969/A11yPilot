@@ -60,7 +60,7 @@ let exitCode = 1;
 try {
   await waitForServer(`${baseUrl}/`);
   const runner = start(process.execPath, [
-    "dist/src/cli.js",
+    "packages/cli/dist/cli.js",
     "run",
     journeyPath,
     "--format",

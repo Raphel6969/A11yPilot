@@ -19,7 +19,7 @@
     "build:cli": "npm run build:core && npm run build:reporters && npm run build --workspace=@a11ypilot/cli",
     "build:ui": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "npm run typecheck:cli && npm run typecheck:ui",
-    "typecheck:cli": "npm run build:core && npm run build:reporters && npm run typecheck --workspace=@a11ypilot/core && npm run typecheck --workspace=@a11ypilot/reporters && npm run typecheck --workspace=@a11ypilot/cli",
+    "typecheck:cli": "npm run build:cli && npm run typecheck --workspace=@a11ypilot/core && npm run typecheck --workspace=@a11ypilot/reporters && npm run typecheck --workspace=@a11ypilot/cli",
     "typecheck:ui": "tsc --noEmit -p tsconfig.app.json",
     "lint": "prettier --check src tests packages",
     "test": "vitest run tests/unit",
