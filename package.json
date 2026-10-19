@@ -28,7 +28,7 @@
     "test:demo": "npm run build:cli && node scripts/run-demo-regression.mjs",
     "test:ui": "vitest run src/App.test.tsx",
     "test:e2e": "npm run build:cli && npm run build:ui && node scripts/run-e2e.mjs",
-    "test:all": "npm test && npm run test:ui && npm run test:library && npm run test:demo && npm run test:e2e",
+    "test:all": "npm test && npm run test:ui && npm run test:library && npm run test:baseline && npm run test:demo && npm run test:e2e",
     "playwright:install": "playwright install chromium",
     "format": "prettier --write src tests packages scripts examples",
     "dev": "vite",

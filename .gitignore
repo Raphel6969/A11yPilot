@@ -9,3 +9,7 @@ test-results/
 .env.*
 !.env.example
 .opencode/
+.agents/
+.claude/
+skills-lock.json
+brag-output*/

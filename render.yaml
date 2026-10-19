@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: a11ypilot
+    runtime: docker
+    repo: https://github.com/Raphel6969/A11yPilot
+    branch: deploy/render
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
