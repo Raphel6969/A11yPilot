@@ -26,7 +26,7 @@ It is designed to complement axe, screen-reader testing, manual review, and visu
 | Library | `@a11ypilot/core`, `@a11ypilot/reporters`, `@a11ypilot/cli` workspace packages |
 | Demo | Broken/fixed seeded site with real Chromium regression checks |
 | Dashboard | Private Vite/React product demo |
-| Deployment | Docker image and Render Blueprint on `deploy/render` |
+| Deployment | Docker image and Render Web Service on `deploy/render` |
 
 ### Current oracle catalog
 
@@ -45,7 +45,7 @@ It is designed to complement axe, screen-reader testing, manual review, and visu
 
 ### Requirements
 
-- Node.js 20+
+- Node.js `20.18.1` (pinned in `.nvmrc`)
 - npm 10+
 - Chromium; install it with the command below
 - A local, staging, or test website you are authorized to test
@@ -82,6 +82,22 @@ npm run lint
 npm run test:all
 npm run build
 ```
+
+The repository provides one canonical test command:
+
+```bash
+npm run test:ci
+```
+
+The same command is available as `make test` on systems with GNU Make. Run it after installation and Chromium setup. The suite is offline-capable: it uses local fixtures and does not fetch websites or require credentials.
+
+For local environment overrides:
+
+```bash
+cp .env.example .env
+```
+
+`.env.example` contains non-secret settings only. Never commit `.env`, credentials, tokens, cookies, or production evidence.
 
 ---
 
@@ -521,6 +537,8 @@ Health check path: /
 ```
 
 Render detects the exposed port from the Docker image; the application listens on `4173`.
+
+The Docker build excludes local `.env` files so secrets cannot be copied into the image.
 
 ---
 

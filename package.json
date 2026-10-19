@@ -29,6 +29,7 @@
     "test:ui": "vitest run src/App.test.tsx",
     "test:e2e": "npm run build:cli && npm run build:ui && node scripts/run-e2e.mjs",
     "test:all": "npm test && npm run test:ui && npm run test:library && npm run test:baseline && npm run test:demo && npm run test:e2e",
+    "test:ci": "npm run test:all",
     "playwright:install": "playwright install chromium",
     "format": "prettier --write src tests packages scripts examples",
     "dev": "vite",
@@ -38,7 +39,7 @@
     "docker:check": "docker build -t a11ypilot:local ."
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.18.1"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.3",

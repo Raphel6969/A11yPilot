@@ -1,14 +1,15 @@
-FROM mcr.microsoft.com/playwright:v1.64.1-jammy AS build
+FROM node:20.18.1-bookworm AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/package.json
 COPY packages/reporters/package.json packages/reporters/package.json
 COPY packages/cli/package.json packages/cli/package.json
 RUN npm ci --ignore-scripts --no-audit --no-fund
+RUN npx playwright install --with-deps chromium
 COPY . .
 RUN npm run typecheck && npm run test:all && npm run build
 
-FROM mcr.microsoft.com/playwright:v1.64.1-jammy AS runtime
+FROM node:20.18.1-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/package.json /app/package-lock.json ./

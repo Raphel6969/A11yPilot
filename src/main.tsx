@@ -126,6 +126,7 @@ export function App() {
     localStorage.setItem("a11ypilot-runs", JSON.stringify(runs));
   }, [runs]);
   useEffect(() => {
+    if (import.meta.env.MODE === "test") return;
     const ctx = gsap.context(() => {
       gsap.from(".page-view", {
         opacity: 0,
