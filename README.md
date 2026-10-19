@@ -366,7 +366,7 @@ Without a baseline, all failing findings at or above the threshold are evaluated
 
 ## 📦 Use as a library
 
-The first `0.1.0` packages are published on npm. You can use them directly or work from this repository:
+The `0.1.1` packages are published on npm. You can use them directly or work from this repository:
 
 ```bash
 npm ci
@@ -379,6 +379,8 @@ Published packages:
 - [`@a11ypilot/core`](https://www.npmjs.com/package/@a11ypilot/core)
 - [`@a11ypilot/reporters`](https://www.npmjs.com/package/@a11ypilot/reporters)
 - [`@a11ypilot/cli`](https://www.npmjs.com/package/@a11ypilot/cli)
+
+Package documentation: [`core`](packages/core/README.md), [`reporters`](packages/reporters/README.md), and [`cli`](packages/cli/README.md).
 
 Install the CLI with:
 

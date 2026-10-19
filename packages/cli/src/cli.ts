@@ -54,7 +54,7 @@ function validateFailOn(value: string): FailOn {
 const program = new Command()
   .name("a11ypilot")
   .description("Keyboard journey accessibility evidence")
-  .version("0.1.0");
+  .version("0.1.1");
 program
   .command("validate")
   .argument("<journey>")
@@ -118,7 +118,7 @@ program
     const result = await readResult(path);
     await writeFile(
       options.output,
-      serializeBaseline(createBaseline(result, { toolVersion: "0.1.0" })),
+      serializeBaseline(createBaseline(result, { toolVersion: "0.1.1" })),
     );
   });
 

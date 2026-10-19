@@ -1,6 +1,6 @@
 {
   "name": "@a11ypilot/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Keyboard journey accessibility evidence CLI",
   "type": "module",
   "bin": {
@@ -14,8 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@a11ypilot/core": "0.1.0",
-    "@a11ypilot/reporters": "0.1.0",
+    "@a11ypilot/core": "0.1.1",
+    "@a11ypilot/reporters": "0.1.1",
     "commander": "^12.1.0",
     "playwright": "^1.48.0"
   }
