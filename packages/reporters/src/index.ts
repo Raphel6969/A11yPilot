@@ -11,6 +11,22 @@ type ReporterResult = {
     wcag?: string[];
   }>;
 };
+export type DiffReport = {
+  newFindings: Array<{
+    fingerprint: string;
+    severity: string;
+    message: string;
+  }>;
+  fixedFindings: Array<{
+    fingerprint: string;
+    finding?: { severity?: string; message?: string };
+  }>;
+  unchangedFindings: Array<{
+    fingerprint: string;
+    severity: string;
+    message: string;
+  }>;
+};
 export function jsonReport(result: ReporterResult): string {
   return JSON.stringify(result, null, 2);
 }
@@ -59,4 +75,29 @@ export function sarifReport(result: ReporterResult): string {
     null,
     2,
   );
+}
+
+export function diffJsonReport(diff: DiffReport): string {
+  return JSON.stringify(diff, null, 2);
+}
+
+export function diffSummaryReport(diff: DiffReport): string {
+  const lines = [
+    `New findings: ${diff.newFindings.length}`,
+    `Fixed findings: ${diff.fixedFindings.length}`,
+    `Unchanged findings: ${diff.unchangedFindings.length}`,
+  ];
+  if (diff.newFindings.length) {
+    lines.push("", "New:");
+    for (const finding of diff.newFindings)
+      lines.push(
+        `- [${finding.severity}] ${finding.fingerprint}: ${finding.message}`,
+      );
+  }
+  if (diff.fixedFindings.length) {
+    lines.push("", "Fixed:");
+    for (const finding of diff.fixedFindings)
+      lines.push(`- ${finding.fingerprint}`);
+  }
+  return `${lines.join("\n")}\n`;
 }

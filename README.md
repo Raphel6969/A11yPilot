@@ -97,6 +97,12 @@ npm run test:demo
 
 The command runs the built CLI against both variants and verifies that the broken modal focus-return and keyboard-trap journeys fail while the fixed journeys pass.
 
+Run the seeded baseline/diff regression smoke (baseline creation, unchanged legacy findings, new critical gating, and fixed findings):
+
+```bash
+npm run test:baseline
+```
+
 Run the complete real-browser check:
 
 ```bash
@@ -275,7 +281,30 @@ node packages/cli/dist/cli.js run journeys/checkout.yml \
 
 Best for feeding findings into code-scanning or CI result systems.
 
-The command exits successfully when all reachability findings pass. It sets a non-zero exit code when the journey is blocked, so a pull request can fail when a critical keyboard path regresses.
+The command exits successfully when all reachability findings pass. It sets a non-zero exit code when the journey is blocked, so a pull request can fail when a critical keyboard path regresses. Use a baseline to gate only newly introduced findings:
+
+```bash
+# Save the findings from a known-good (or accepted) run.
+node packages/cli/dist/cli.js baseline artifacts/checkout.json \
+  --output artifacts/checkout.baseline.json
+
+# Existing findings are ignored; new serious-or-higher findings fail the command.
+node packages/cli/dist/cli.js run journeys/checkout.yml \
+  --baseline artifacts/checkout.baseline.json \
+  --fail-on serious \
+  --format sarif --output artifacts/checkout.sarif
+```
+
+`--fail-on` accepts `critical`, `serious`, `moderate`, or `minor`. Without `--baseline`, the command retains its normal behavior and gates critical/serious/error failures.
+
+Compare a baseline with a later result using a readable summary (the default) or machine-readable JSON:
+
+```bash
+node packages/cli/dist/cli.js diff artifacts/checkout.baseline.json artifacts/checkout.json
+node packages/cli/dist/cli.js diff artifacts/checkout.baseline.json artifacts/checkout.json --format json
+```
+
+The `diff` command reports new, fixed, and unchanged findings. Its `before` argument may also be an earlier result JSON; it is converted to a baseline using finding fingerprints.
 
 ## 👥 How a real development team uses it
 

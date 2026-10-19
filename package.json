@@ -24,6 +24,7 @@
     "lint": "prettier --check src tests packages scripts examples",
     "test": "vitest run tests/unit",
     "test:library": "npm run build:cli && node scripts/smoke-library.mjs",
+    "test:baseline": "npm run build:cli && node scripts/smoke-baseline.mjs",
     "test:demo": "npm run build:cli && node scripts/run-demo-regression.mjs",
     "test:ui": "vitest run src/App.test.tsx",
     "test:e2e": "npm run build:cli && npm run build:ui && node scripts/run-e2e.mjs",
