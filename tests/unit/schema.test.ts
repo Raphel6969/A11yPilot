@@ -32,4 +32,21 @@ describe("journey schema", () => {
     });
     expect(result.success).toBe(false);
   });
+  it("accepts an executable dialog focus-return expectation", () => {
+    const result = journeySchema.parse({
+      version: 1,
+      name: "Dialog",
+      start: "http://localhost",
+      steps: [
+        {
+          expectDialog: {
+            opensFrom: { role: "button", name: "Details" },
+            closesWith: "Escape",
+            focusReturns: true,
+          },
+        },
+      ],
+    });
+    expect(result.steps[0].expectDialog?.closesWith).toBe("Escape");
+  });
 });

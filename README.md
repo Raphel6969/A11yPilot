@@ -89,6 +89,14 @@ npm run preview
 
 The repository contains `journey.example.yml`, which checks that the demo's **Run this journey** button is reachable by keyboard.
 
+The seeded broken/fixed interaction demo lives under `examples/demo-site`. Run its real-browser regression check with:
+
+```bash
+npm run test:demo
+```
+
+The command runs the built CLI against both variants and verifies that the broken modal focus-return and keyboard-trap journeys fail while the fixed journeys pass.
+
 Run the complete real-browser check:
 
 ```bash

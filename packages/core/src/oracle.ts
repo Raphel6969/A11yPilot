@@ -128,7 +128,14 @@ function oracleFinding(
   };
   return {
     ...finding,
-    fingerprint: stableFingerprint({ oracle, target: context.target }),
+    fingerprint: stableFingerprint({
+      oracle,
+      target: context.target,
+      expectDialog:
+        "expectDialog" in context.step.action
+          ? context.step.action.expectDialog
+          : undefined,
+    }),
     stepId: context.step.id,
     outcome: status,
     recommendation: fix,
@@ -237,8 +244,64 @@ export const focusVisibleOracle: Oracle = {
   },
 };
 
+export const focusReturnOracle: Oracle = {
+  id: "focus-return",
+  evaluate(context) {
+    const action = context.step.action;
+    if (!("expectDialog" in action) || action.expectDialog === undefined)
+      return undefined;
+    const previousFocus = context.previousFocus?.selector;
+    const focused = context.focused?.selector;
+    const evidence = {
+      tabStops: context.tabStops.map((stop) => stop.selector),
+      focused,
+      previousFocus,
+    };
+    if (
+      !context.reached ||
+      previousFocus === undefined ||
+      focused === undefined
+    ) {
+      return oracleFinding(
+        context,
+        "focus-return",
+        "needs-review",
+        "The dialog trigger or post-close focus was not captured, so focus return could not be judged.",
+        ["2.4.3"],
+        "warning",
+        evidence,
+        "Capture the trigger focus and the focused element after closing the dialog.",
+      );
+    }
+    const returned = focused === previousFocus;
+    const expected = action.expectDialog.focusReturns;
+    const passes = returned === expected;
+    return oracleFinding(
+      context,
+      "focus-return",
+      passes ? "pass" : "fail",
+      passes
+        ? expected
+          ? "Focus returned to the element that opened the dialog."
+          : "Focus did not return to the element that opened the dialog, as expected."
+        : expected
+          ? "Focus did not return to the element that opened the dialog."
+          : "Focus returned to the dialog trigger unexpectedly.",
+      ["2.4.3"],
+      passes ? "info" : "serious",
+      evidence,
+      passes
+        ? undefined
+        : expected
+          ? "Return focus to the control that opened the dialog after the dialog closes."
+          : "Confirm that the dialog's documented focus destination is intentional and accessible.",
+    );
+  },
+};
+
 export const defaultOracles: Oracle[] = [
   reachabilityOracle,
   noKeyboardTrapOracle,
   focusVisibleOracle,
+  focusReturnOracle,
 ];

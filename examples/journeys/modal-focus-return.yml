@@ -1,0 +1,13 @@
+version: 1
+name: Modal focus returns to its trigger
+start: http://127.0.0.1:4174/
+options:
+  maxTabStops: 20
+  timeoutMs: 5000
+steps:
+  - expectDialog:
+      opensFrom:
+        role: button
+        name: "Open help dialog"
+      closesWith: Escape
+      focusReturns: true

@@ -3,6 +3,13 @@ export const targetSchema = z
   .object({ role: z.string().min(1), name: z.string().min(1) })
   .strict();
 const targetStep = z.object({ target: targetSchema }).strict();
+const expectDialogStep = z
+  .object({
+    opensFrom: targetSchema,
+    closesWith: z.string().min(1),
+    focusReturns: z.boolean(),
+  })
+  .strict();
 const rawStepSchema = z
   .object({
     goal: z.string().optional(),
@@ -10,6 +17,7 @@ const rawStepSchema = z
     expect: targetSchema.optional(),
     type: targetStep.extend({ text: z.string() }).optional(),
     activate: targetSchema.optional(),
+    expectDialog: expectDialogStep.optional(),
     press: targetStep.extend({ key: z.string().min(1) }).optional(),
     expectError: z
       .object({ field: targetSchema, announced: z.boolean().optional() })
@@ -28,6 +36,7 @@ const rawStepSchema = z
       "expect",
       "type",
       "activate",
+      "expectDialog",
       "press",
       "expectError",
       "expectStatus",

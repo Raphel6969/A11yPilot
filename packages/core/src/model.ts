@@ -13,6 +13,7 @@ export type Severity =
 export type Evidence = {
   tabStops: string[];
   focused?: string;
+  previousFocus?: string;
   focusVisible?: boolean;
   screenshot?: string;
   accessibilitySnapshot?: string;

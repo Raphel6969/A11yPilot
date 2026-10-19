@@ -157,6 +157,32 @@ async function executeJourney(
         after: emptySnapshot(),
       });
       if (reached.reached) await navigator.press("Enter");
+    } else if ("expectDialog" in step.action && step.action.expectDialog) {
+      target = step.action.expectDialog.opensFrom;
+      const reached = await navigator.reach(
+        target,
+        journey.options.maxTabStops,
+      );
+      stops.push(...reached.stops.map((s) => s.selector));
+      const previousFocus = reached.focused;
+      if (reached.reached) {
+        await navigator.press("Enter");
+        await navigator.press(step.action.expectDialog.closesWith);
+      }
+      const focused = await page.activeFocus();
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        target,
+        reached: reached.reached,
+        tabStops: reached.stops,
+        focused,
+        previousFocus: previousFocus ?? undefined,
+        focusVisible: page.focusVisible ? await page.focusVisible() : null,
+        before: emptySnapshot(),
+        after: emptySnapshot(),
+      });
     } else if ("press" in step.action && step.action.press)
       await navigator.press(step.action.press.key);
     const capture = evidenceDir && action !== "goto";

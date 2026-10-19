@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultOracles,
   focusVisibleOracle,
+  focusReturnOracle,
   noKeyboardTrapOracle,
   reachabilityOracle,
   reachabilityFinding,
@@ -118,6 +119,67 @@ describe("evidence-backed oracle foundation", () => {
     expect(finding).toMatchObject({
       oracle: "focus-visible",
       status: "needs-review",
+    });
+  });
+
+  describe("focus return", () => {
+    const dialogStep = {
+      id: "step-001",
+      action: {
+        expectDialog: {
+          opensFrom: { role: "button", name: "Details" },
+          closesWith: "Escape",
+          focusReturns: true,
+        },
+      },
+    } as const;
+    const dialogContext = {
+      page: undefined as never,
+      step: dialogStep,
+      stepIndex: 0,
+      target: dialogStep.action.expectDialog.opensFrom,
+      reached: true,
+      tabStops: [{ selector: "#details" }, { selector: "#close" }],
+      before: { children: [] },
+      after: { children: [] },
+    };
+
+    it("passes when close returns focus to the trigger", () => {
+      expect(
+        focusReturnOracle.evaluate({
+          ...dialogContext,
+          previousFocus: { selector: "#details" },
+          focused: { selector: "#details" },
+        }),
+      ).toMatchObject({
+        oracle: "focus-return",
+        status: "pass",
+        wcag: ["2.4.3"],
+        evidence: {
+          tabStops: ["#details", "#close"],
+          focused: "#details",
+          previousFocus: "#details",
+        },
+      });
+    });
+
+    it("fails when close leaves focus elsewhere", () => {
+      expect(
+        focusReturnOracle.evaluate({
+          ...dialogContext,
+          previousFocus: { selector: "#details" },
+          focused: { selector: "#after" },
+        }),
+      ).toMatchObject({ oracle: "focus-return", status: "fail" });
+    });
+
+    it("needs review when the post-close focus was not captured", () => {
+      expect(
+        focusReturnOracle.evaluate({
+          ...dialogContext,
+          previousFocus: { selector: "#details" },
+        }),
+      ).toMatchObject({ oracle: "focus-return", status: "needs-review" });
     });
   });
 });
