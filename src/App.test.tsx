@@ -33,6 +33,7 @@ describe("A11yPilot demo journey", () => {
   });
 
   it("opens and closes the new journey dialog", () => {
+    window.history.replaceState(null, "", "#journeys");
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /New journey/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
@@ -42,7 +43,9 @@ describe("A11yPilot demo journey", () => {
 
   it("navigates between pages with hash links", async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Journeys/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open interactive workspace/i }),
+    );
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Journeys" })).toBeVisible(),
     );
@@ -57,6 +60,7 @@ describe("A11yPilot demo journey", () => {
   });
 
   it("creates a journey from the guided method", async () => {
+    window.history.replaceState(null, "", "#journeys");
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /New journey/i }));
     fireEvent.change(screen.getByLabelText("Journey name"), {
@@ -72,8 +76,8 @@ describe("A11yPilot demo journey", () => {
   });
 
   it("filters journeys and records export interactions", async () => {
+    window.history.replaceState(null, "", "#journeys");
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Journeys/ }));
     await waitFor(() =>
       expect(screen.getByLabelText("Search journeys")).toBeVisible(),
     );
@@ -91,8 +95,8 @@ describe("A11yPilot demo journey", () => {
   });
 
   it("saves settings and searches documentation/copies command", async () => {
+    window.history.replaceState(null, "", "#settings");
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     await waitFor(() =>
       expect(screen.getByLabelText("Workspace name")).toBeVisible(),
     );
@@ -101,7 +105,8 @@ describe("A11yPilot demo journey", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
     expect(screen.getByRole("status")).toHaveTextContent("Settings saved");
-    fireEvent.click(screen.getByRole("button", { name: "Documentation" }));
+    window.history.replaceState(null, "", "#docs");
+    fireEvent(window, new HashChangeEvent("hashchange"));
     await waitFor(() =>
       expect(screen.getByLabelText("Search documentation")).toBeVisible(),
     );
@@ -116,6 +121,7 @@ describe("A11yPilot demo journey", () => {
   });
 
   it("closes the creation modal with Escape", () => {
+    window.history.replaceState(null, "", "#journeys");
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /New journey/i }));
     fireEvent.keyDown(document, { key: "Escape" });
