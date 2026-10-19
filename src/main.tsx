@@ -87,7 +87,8 @@ const productLinks = {
   reporters: "https://www.npmjs.com/package/@a11ypilot/reporters",
   cli: "https://www.npmjs.com/package/@a11ypilot/cli",
   docs: "https://github.com/Raphel6969/A11yPilot#readme",
-  render: "https://render.com/",
+  examples: "https://github.com/Raphel6969/A11yPilot/tree/main/examples",
+  render: "https://render.com/docs",
 };
 const readStorage = <T,>(key: string, fallback: T): T => {
   try {
@@ -597,21 +598,27 @@ function Overview({
 
 function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
   const features = [
-    [
-      "Journey-first",
-      "Test the task, not just the page. Model the keyboard path your users rely on.",
-    ],
-    [
-      "Evidence-backed",
-      "Capture focus, form feedback, announcements, and barriers at every step.",
-    ],
-    [
-      "CI-ready",
-      "Export readable HTML, automation-friendly JSON, or SARIF for code scanning.",
-    ],
+    ["Journey-first", "Test the task, not just the page.", "01"],
+    ["Evidence-backed", "See the moment a user gets stuck.", "02"],
+    ["CI-ready", "Ship JSON, HTML, or SARIF to your workflow.", "03"],
     [
       "Local by default",
-      "Keep specs, runs, and sensitive page content in your own environment.",
+      "Keep specs and page content in your environment.",
+      "04",
+    ],
+  ];
+  const useCases = [
+    [
+      "Checkout & forms",
+      "Catch errors that look visible but never reach assistive technology.",
+    ],
+    [
+      "Dialogs & menus",
+      "Verify focus moves in, stays usable, and returns to the right trigger.",
+    ],
+    [
+      "CI regression gates",
+      "Compare runs and make new accessibility barriers visible in review.",
     ],
   ];
   return (
@@ -619,43 +626,128 @@ function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
       className="product-landing stagger-in"
       aria-labelledby="product-heading"
     >
-      <div className="product-intro">
-        <div>
-          <p className="eyebrow teal">THE ACCESSIBILITY JOURNEY PLATFORM</p>
+      <div className="showcase-hero">
+        <div className="product-intro">
+          <p className="eyebrow teal">A11YPILOT / ACCESSIBILITY EVIDENCE</p>
           <h2 id="product-heading">
-            Ship journeys your users can actually finish.
+            The shortest path from <em>stuck</em> to shipped.
           </h2>
           <p>
-            A11yPilot turns real keyboard journeys into repeatable checks and
-            clear evidence—so teams can find the moment a user gets stuck and
-            fix it with confidence.
+            Turn the keyboard journeys your customers depend on into
+            deterministic, evidence-backed checks. A11yPilot pairs real Chromium
+            behavior with focused accessibility oracles, so fixes are easy to
+            find and easy to trust.
           </p>
+          <div className="product-actions">
+            <button
+              className="primary-button"
+              onClick={() => navigate("journeys")}
+            >
+              Start a journey <span>→</span>
+            </button>
+            <a
+              className="secondary-button"
+              href={productLinks.repository}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Explore the source ↗
+            </a>
+          </div>
         </div>
-        <div className="product-actions">
-          <button
-            className="primary-button"
-            onClick={() => navigate("journeys")}
-          >
-            Build a journey <span>→</span>
-          </button>
-          <a
-            className="secondary-button"
-            href={productLinks.repository}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on GitHub ↗
-          </a>
+        <div className="hero-proof" aria-label="Product proof points">
+          <span className="proof-line">
+            <b>01</b> real user path
+          </span>
+          <span className="proof-line">
+            <b>02</b> deterministic oracles
+          </span>
+          <span className="proof-line">
+            <b>03</b> reviewable evidence
+          </span>
+          <div className="proof-score">
+            <strong>6</strong>
+            <span>
+              WCAG-mapped
+              <br />
+              oracles included
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="process-section" aria-labelledby="process-heading">
+        <div className="section-intro">
+          <span className="eyebrow teal">THE FLOW</span>
+          <h3 id="process-heading">One journey. Four clear signals.</h3>
+          <p>From the first Tab press to a report your team can act on.</p>
+        </div>
+        <div className="process-diagram">
+          {[
+            ["01", "Journey", "Define the task"],
+            ["02", "Chromium", "Drive the real browser"],
+            ["03", "Oracles", "Evaluate behavior"],
+            ["04", "Evidence", "Share the proof"],
+          ].map(([number, title, text], index) => (
+            <React.Fragment key={title}>
+              <div className="process-node">
+                <span>{number}</span>
+                <strong>{title}</strong>
+                <small>{text}</small>
+              </div>
+              {index < 3 && (
+                <span className="process-arrow" aria-hidden="true">
+                  →
+                </span>
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
       <div className="feature-catalog" aria-label="A11yPilot features">
-        {features.map(([title, text], index) => (
+        {features.map(([title, text, number]) => (
           <article className="feature-card" key={title}>
-            <span className="feature-number">0{index + 1}</span>
+            <span className="feature-number">{number}</span>
             <h3>{title}</h3>
             <p>{text}</p>
           </article>
         ))}
+      </div>
+      <div className="showcase-split">
+        <div className="use-case-block">
+          <span className="eyebrow teal">
+            BUILT FOR THE MOMENTS THAT MATTER
+          </span>
+          <h3>Accessibility is a journey, not a checkbox.</h3>
+          <div className="use-case-list">
+            {useCases.map(([title, text]) => (
+              <article key={title}>
+                <span>↗</span>
+                <div>
+                  <strong>{title}</strong>
+                  <p>{text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="code-card">
+          <div className="code-heading">
+            <span>QUICK START</span>
+            <span>journey.yml</span>
+          </div>
+          <pre>
+            <code>{`version: 1
+name: Recover from a form error
+start: http://localhost:3000
+steps:
+  - press: Tab
+  - expect: { role: textbox, name: Email }
+  - press: Enter`}</code>
+          </pre>
+          <a href={productLinks.examples} target="_blank" rel="noreferrer">
+            Browse journey examples ↗
+          </a>
+        </div>
       </div>
       <div className="ecosystem-grid">
         <article className="ecosystem-card package-card">
@@ -692,7 +784,7 @@ function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
           </p>
           <div className="deploy-links">
             <a href={productLinks.render} target="_blank" rel="noreferrer">
-              Explore Render ↗
+              Read Render deployment docs ↗
             </a>
             <a href={productLinks.docs} target="_blank" rel="noreferrer">
               Read deployment notes ↗
@@ -702,8 +794,10 @@ function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
       </div>
       <div className="cta-strip">
         <div>
-          <strong>Ready to test the path that matters?</strong>
-          <span>Start locally, then take the evidence to your team.</span>
+          <strong>Make the next release easier to use.</strong>
+          <span>
+            Open source, local-first, and ready for your existing test stack.
+          </span>
         </div>
         <div className="cta-links">
           <button className="primary-button" onClick={() => navigate("docs")}>

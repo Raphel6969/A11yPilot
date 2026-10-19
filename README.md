@@ -11,33 +11,44 @@ A11yPilot turns important user journeys into repeatable keyboard-accessibility c
 
 It is designed to complement axe, screen-reader testing, manual review, and visual testing. **A passing run is not WCAG, ADA, or EAA certification.**
 
+## 🧭 Start here
+
+| Want to…                                   | Go to                                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| See the product in action                  | [`examples/demo-site`](examples/demo-site) and [`examples/journeys`](examples/journeys)                                             |
+| Install the command-line runner            | [`@a11ypilot/cli` on npm](https://www.npmjs.com/package/@a11ypilot/cli) · [package guide](packages/cli/README.md)                   |
+| Embed the engine in Playwright code        | [`@a11ypilot/core` on npm](https://www.npmjs.com/package/@a11ypilot/core) · [package guide](packages/core/README.md)                |
+| Generate JSON, HTML, SARIF, or diff output | [`@a11ypilot/reporters` on npm](https://www.npmjs.com/package/@a11ypilot/reporters) · [package guide](packages/reporters/README.md) |
+| Run the dashboard locally                  | [Quick start](#-quick-start)                                                                                                        |
+| Deploy the dashboard                       | [Render Web Service](#render-web-service-recommended)                                                                               |
+
 ---
 
 ## 🚀 What is included
 
-| Area | Ships today |
-| --- | --- |
-| Browser runner | Real Playwright Chromium with keyboard-only navigation |
-| Journey format | Strict YAML validation with accessible role/name targets |
-| Oracles | Reachability, keyboard traps, focus-visible, focus-return, error-identification, status-announcement |
-| Evidence | Screenshots, accessibility-tree JSON when available, focus traces, error/status evidence |
-| Reports | JSON, HTML, SARIF, baseline diff summaries |
-| Baselines | New, fixed, unchanged classification and `--fail-on` gating |
-| Library | `@a11ypilot/core`, `@a11ypilot/reporters`, `@a11ypilot/cli` workspace packages |
-| Demo | Broken/fixed seeded site with real Chromium regression checks |
-| Dashboard | Private Vite/React product demo |
-| Deployment | Docker image and Render Web Service on `deploy/render` |
+| Area           | Ships today                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| Browser runner | Real Playwright Chromium with keyboard-only navigation                                               |
+| Journey format | Strict YAML validation with accessible role/name targets                                             |
+| Oracles        | Reachability, keyboard traps, focus-visible, focus-return, error-identification, status-announcement |
+| Evidence       | Screenshots, accessibility-tree JSON when available, focus traces, error/status evidence             |
+| Reports        | JSON, HTML, SARIF, baseline diff summaries                                                           |
+| Baselines      | New, fixed, unchanged classification and `--fail-on` gating                                          |
+| Library        | `@a11ypilot/core`, `@a11ypilot/reporters`, `@a11ypilot/cli` workspace packages                       |
+| Demo           | Broken/fixed seeded site with real Chromium regression checks                                        |
+| Dashboard      | Private Vite/React product demo                                                                      |
+| Deployment     | Docker image and Render Web Service on `deploy/render`                                               |
 
 ### Current oracle catalog
 
-| Oracle | WCAG | Detects |
-| --- | --- | --- |
-| `reachability` | 2.1.1 | A target cannot be reached with `Tab` |
-| `no-keyboard-trap` | 2.1.2 | Focus repeats across consecutive keyboard stops |
-| `focus-return` | 2.4.3 | Dialog focus does not return to its trigger |
-| `focus-visible` | 2.4.7 | Focused element does not match `:focus-visible` |
-| `error-identification` | 3.3.1 | Invalid fields lack identifiable or associated errors |
-| `status-announcement` | 4.1.3 | Status text lacks semantic/live/focus announcement evidence |
+| Oracle                 | WCAG  | Detects                                                     |
+| ---------------------- | ----- | ----------------------------------------------------------- |
+| `reachability`         | 2.1.1 | A target cannot be reached with `Tab`                       |
+| `no-keyboard-trap`     | 2.1.2 | Focus repeats across consecutive keyboard stops             |
+| `focus-return`         | 2.4.3 | Dialog focus does not return to its trigger                 |
+| `focus-visible`        | 2.4.7 | Focused element does not match `:focus-visible`             |
+| `error-identification` | 3.3.1 | Invalid fields lack identifiable or associated errors       |
+| `status-announcement`  | 4.1.3 | Status text lacks semantic/live/focus announcement evidence |
 
 ---
 
@@ -136,6 +147,16 @@ examples/journeys/
 ---
 
 ## 🧭 Test any website
+
+### Common use cases
+
+- **Checkout and signup:** prove that fields, validation errors, and submit actions remain reachable.
+- **Dialogs and menus:** verify focus enters the component, Escape closes it, and focus returns to the trigger.
+- **Regression gates:** preserve accepted findings in a baseline and fail CI only for newly introduced serious findings.
+- **Design-system release checks:** run the same journeys against seeded broken/fixed examples before publishing components.
+- **Evidence for review:** attach HTML for humans, JSON for automation, SARIF for code scanning, and screenshots/AX snapshots from the library path.
+
+Browse the seeded workflows in [`examples/journeys`](examples/journeys), then run the broken/fixed demo with `npm run test:demo`.
 
 ### 1. Start the target website
 
@@ -408,12 +429,9 @@ Example programmatic usage:
 
 ```ts
 import { chromium } from "playwright";
-import {
-  defaultOracles,
-  loadJourney,
-  runJourney,
-} from "@a11ypilot/core";
-import { jsonReport } from "@a11ypilot/reporters";
+import { defaultOracles, loadJourney, runJourney } from "@a11ypilot/core";
+import { htmlReport, jsonReport, sarifReport } from "@a11ypilot/reporters";
+import { writeFile } from "node:fs/promises";
 
 const loaded = await loadJourney("journeys/checkout.yml");
 const browser = await chromium.launch();
@@ -426,9 +444,40 @@ const result = await runJourney(page, loaded, {
 
 console.log(result.status, result.findings.length);
 console.log(jsonReport(result));
+await writeFile("artifacts/checkout.html", htmlReport(result));
+await writeFile("artifacts/checkout.sarif", sarifReport(result));
 
 await browser.close();
 ```
+
+The three packages can also be used together in a small CI script:
+
+```bash
+npm install --save-dev @a11ypilot/cli
+npx playwright install chromium
+npx a11ypilot validate journeys/checkout.yml
+npx a11ypilot run journeys/checkout.yml \
+  --format sarif --output artifacts/checkout.sarif
+```
+
+For application code that already owns a Playwright page, use core and reporters directly:
+
+```ts
+const result = await runJourney(page, loaded, {
+  oracles: defaultOracles,
+  evidenceDir: "artifacts/checkout-evidence",
+});
+
+await writeFile("artifacts/checkout.json", jsonReport(result));
+await writeFile("artifacts/checkout.html", htmlReport(result));
+await writeFile("artifacts/checkout.sarif", sarifReport(result));
+```
+
+Read the detailed package guides for API contracts, supported actions, evidence behavior, baseline APIs, and security boundaries:
+
+- [`packages/core/README.md`](packages/core/README.md)
+- [`packages/reporters/README.md`](packages/reporters/README.md)
+- [`packages/cli/README.md`](packages/cli/README.md)
 
 The next package milestone is `@a11ypilot/playwright`, which will reuse an existing Playwright test's `page`, auth state, mocks, and fixtures.
 
@@ -645,8 +694,8 @@ This is an MVP/buildathon project. The next production milestones are:
 
 1. push and verify the deploy branch,
 2. ship `@a11ypilot/playwright`,
-4. ship a reusable GitHub Action,
-5. add authenticated `storageState` journeys,
-6. add hosted runs and scheduled monitoring only after the local/library contracts stabilize.
+3. ship a reusable GitHub Action,
+4. add authenticated `storageState` journeys,
+5. add hosted runs and scheduled monitoring only after the local/library contracts stabilize.
 
 Repository: <https://github.com/Raphel6969/A11yPilot>

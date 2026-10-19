@@ -1,61 +1,91 @@
 # @a11ypilot/reporters
 
-Small, dependency-light formatters for A11yPilot journey results and baseline diffs.
+`@a11ypilot/reporters` converts an A11yPilot journey result or baseline diff into JSON, compact HTML, SARIF 2.1.0, or a text summary. It is deliberately small and does not launch browsers, load journeys, write files, upload artifacts, or choose exit codes.
 
-[Repository](https://github.com/Raphel6969/A11yPilot) · [npm package](https://www.npmjs.com/package/@a11ypilot/reporters)
+- [Repository](https://github.com/Raphel6969/A11yPilot)
+- [npm package](https://www.npmjs.com/package/@a11ypilot/reporters)
+- Related packages: [`@a11ypilot/core`](../core/README.md) · [`@a11ypilot/cli`](../cli/README.md)
 
-## Install
+## Installation
 
 ```bash
-npm install @a11ypilot/reporters @a11ypilot/core
+npm install @a11ypilot/reporters @a11ypilot/core playwright
+npx playwright install chromium
 ```
 
-Version `0.1.1` depends on the matching `@a11ypilot/core` `0.1.1` API. The package has no peer dependencies and does not launch browsers; use `@a11ypilot/core` (and a Playwright implementation) to create results first.
+Version `0.1.1` is built against `@a11ypilot/core` `0.1.1`. Reporters have no peer dependencies. Install core and a Playwright implementation to create a result first; reporters only format the object they receive.
 
-## API usage
+## Format a realistic run
+
+The normal flow is: load and run a journey with core, then write each selected representation yourself.
 
 ```ts
-import { jsonReport, htmlReport, sarifReport } from "@a11ypilot/reporters";
-import { loadJourney, runJourney } from "@a11ypilot/core";
 import { chromium } from "playwright";
-import { writeFile } from "node:fs/promises";
+import { loadJourney, runJourney } from "@a11ypilot/core";
+import { htmlReport, jsonReport, sarifReport } from "@a11ypilot/reporters";
+import { mkdir, writeFile } from "node:fs/promises";
 
-const loaded = await loadJourney("journeys/login.yml");
+await mkdir("artifacts", { recursive: true });
+const loaded = await loadJourney("journeys/checkout.yml");
 const browser = await chromium.launch();
 try {
-  const result = await runJourney(await browser.newPage(), loaded);
-  await writeFile("artifacts/result.json", jsonReport(result));
-  console.log(htmlReport(result));
-  console.log(sarifReport(result));
+  const result = await runJourney(await browser.newPage(), loaded, {
+    evidenceDir: "artifacts/checkout-evidence",
+  });
+  await writeFile("artifacts/checkout.json", jsonReport(result));
+  await writeFile("artifacts/checkout.html", htmlReport(result));
+  await writeFile("artifacts/checkout.sarif", sarifReport(result));
+  console.log(result.status);
 } finally {
   await browser.close();
 }
 ```
 
-The exports are `jsonReport`, `htmlReport`, `sarifReport`, `diffJsonReport`, and `diffSummaryReport`. Each accepts a compatible result or diff object and returns a string; writing files and choosing an exit code remain the caller's responsibility.
+The result retains journey status, keyboard traces, findings, fingerprints, WCAG references, and any evidence paths created by core. JSON preserves the result as indented machine-readable data. HTML renders a findings table containing step, oracle, outcome, severity, and message. SARIF is version 2.1.0 and includes only findings whose `outcome` is `fail`, with rule ID, severity-derived level, message, step, oracle, and WCAG properties.
 
-## Journey and diff example
+## API
 
-Run a journey with `@a11ypilot/core`, then format the returned result:
+The package exports:
 
 ```ts
-const json = jsonReport(result);
-const html = htmlReport(result);
-const sarif = sarifReport(result);
+jsonReport(result): string;
+htmlReport(result): string;
+sarifReport(result): string;
+diffJsonReport(diff): string;
+diffSummaryReport(diff): string;
 ```
 
-For a baseline comparison:
+The result input is structurally compatible with a core `JourneyResult`. Diff functions accept the object returned by core's `diffResults` (or a compatible `DiffReport`). For example:
 
 ```ts
-import { diffResults } from "@a11ypilot/core";
+import { createBaseline, diffResults } from "@a11ypilot/core";
+import { diffJsonReport, diffSummaryReport } from "@a11ypilot/reporters";
+import { writeFile } from "node:fs/promises";
+
+// `result` is the JourneyResult returned by core's runJourney(...).
+const baseline = createBaseline(result, { toolVersion: "0.1.1" });
 const diff = diffResults(result, baseline);
+
+await writeFile("artifacts/checkout-diff.json", diffJsonReport(diff));
 console.log(diffSummaryReport(diff));
 ```
 
-## Outputs
+The summary starts with counts for new, fixed, and unchanged findings, then lists new and fixed fingerprints when present. Baseline creation, persistence, comparison, and gating belong to core; this package only formats the diff.
 
-JSON is pretty-printed machine-readable result data. HTML is a compact findings table suitable for an artifact or review page. SARIF 2.1.0 contains failing findings for code-scanning integrations. Diff JSON contains `newFindings`, `fixedFindings`, and `unchangedFindings`; the summary reports their counts and details for new and fixed findings. Reporters escape HTML text, but consumers should still apply their own transport and hosting controls.
+## Cross-package and CLI workflow
+
+For a shell or CI workflow, [`@a11ypilot/cli`](../cli/README.md) composes core and reporters for you:
+
+```bash
+npx a11ypilot validate journeys/checkout.yml
+npx a11ypilot run journeys/checkout.yml --format json --output artifacts/checkout.json
+npx a11ypilot run journeys/checkout.yml --format sarif --output artifacts/checkout.sarif
+npx a11ypilot baseline artifacts/checkout.json --output a11y-baseline.json
+npx a11ypilot diff a11y-baseline.json artifacts/checkout.json --format summary
+```
+
+Use the library API when you need to choose an evidence directory or combine several output files in application code. Use the CLI when you want standard command-line validation, browser execution, baseline creation, and non-zero gating behavior.
 
 ## Security and scope
 
-Reporters format data; they do not validate that a result came from a trusted run, sanitize arbitrary HTML beyond table fields, upload artifacts, or enforce authorization. Treat reports as potentially sensitive because findings may include page-derived names and messages. SARIF and HTML output are evidence summaries, not WCAG, ADA, or EAA certification and not a substitute for manual, visual, or screen-reader review.
+Reporters format data; they do not verify that a result came from a trusted run, enforce authorization, sanitize or host arbitrary application content, upload artifacts, or enforce exit codes. HTML table fields are escaped, but consumers must still apply appropriate transport and hosting controls. Reports may contain page-derived names, messages, URLs, or evidence paths, so protect artifacts and do not commit secrets. HTML, JSON, SARIF, and diff output are evidence summaries—not WCAG, ADA, or EAA certification—and do not replace manual, visual, or screen-reader review.
