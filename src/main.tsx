@@ -80,6 +80,15 @@ const pageLabels: Record<Page, string> = {
   settings: "Settings",
   docs: "Documentation",
 };
+const productLinks = {
+  repository: "https://github.com/Raphel6969/A11yPilot",
+  npm: "https://www.npmjs.com/org/a11ypilot",
+  core: "https://www.npmjs.com/package/@a11ypilot/core",
+  reporters: "https://www.npmjs.com/package/@a11ypilot/reporters",
+  cli: "https://www.npmjs.com/package/@a11ypilot/cli",
+  docs: "https://github.com/Raphel6969/A11yPilot#readme",
+  render: "https://render.com/",
+};
 const readStorage = <T,>(key: string, fallback: T): T => {
   try {
     return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
@@ -580,7 +589,131 @@ function Overview({
           </div>
         </div>
       </section>
+      <ProductLanding navigate={navigate} />
     </>
+  );
+}
+
+function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
+  const features = [
+    [
+      "Journey-first",
+      "Test the task, not just the page. Model the keyboard path your users rely on.",
+    ],
+    [
+      "Evidence-backed",
+      "Capture focus, form feedback, announcements, and barriers at every step.",
+    ],
+    [
+      "CI-ready",
+      "Export readable HTML, automation-friendly JSON, or SARIF for code scanning.",
+    ],
+    [
+      "Local by default",
+      "Keep specs, runs, and sensitive page content in your own environment.",
+    ],
+  ];
+  return (
+    <section
+      className="product-landing stagger-in"
+      aria-labelledby="product-heading"
+    >
+      <div className="product-intro">
+        <div>
+          <p className="eyebrow teal">THE ACCESSIBILITY JOURNEY PLATFORM</p>
+          <h2 id="product-heading">
+            Ship journeys your users can actually finish.
+          </h2>
+          <p>
+            A11yPilot turns real keyboard journeys into repeatable checks and
+            clear evidence—so teams can find the moment a user gets stuck and
+            fix it with confidence.
+          </p>
+        </div>
+        <div className="product-actions">
+          <button
+            className="primary-button"
+            onClick={() => navigate("journeys")}
+          >
+            Build a journey <span>→</span>
+          </button>
+          <a
+            className="secondary-button"
+            href={productLinks.repository}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on GitHub ↗
+          </a>
+        </div>
+      </div>
+      <div className="feature-catalog" aria-label="A11yPilot features">
+        {features.map(([title, text], index) => (
+          <article className="feature-card" key={title}>
+            <span className="feature-number">0{index + 1}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+      <div className="ecosystem-grid">
+        <article className="ecosystem-card package-card">
+          <div className="card-heading">
+            <span className="eyebrow teal">NPM PACKAGES</span>
+            <span className="card-mark">&lt;/&gt;</span>
+          </div>
+          <h3>Use the pieces your workflow needs.</h3>
+          <p>Compose the engine, reporters, and CLI in your own test stack.</p>
+          <div className="package-links">
+            <a href={productLinks.cli} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/cli</code>
+              <span>CLI runner ↗</span>
+            </a>
+            <a href={productLinks.core} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/core</code>
+              <span>Journey engine ↗</span>
+            </a>
+            <a href={productLinks.reporters} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/reporters</code>
+              <span>Evidence output ↗</span>
+            </a>
+          </div>
+        </article>
+        <article className="ecosystem-card deploy-card">
+          <div className="card-heading">
+            <span className="eyebrow teal">DEPLOYMENT CONTEXT</span>
+            <span className="render-badge">render</span>
+          </div>
+          <h3>Preview, review, and deploy with clarity.</h3>
+          <p>
+            Keep the dashboard close to the app you ship. A11yPilot works
+            locally and fits cleanly into Render-hosted workflows.
+          </p>
+          <div className="deploy-links">
+            <a href={productLinks.render} target="_blank" rel="noreferrer">
+              Explore Render ↗
+            </a>
+            <a href={productLinks.docs} target="_blank" rel="noreferrer">
+              Read deployment notes ↗
+            </a>
+          </div>
+        </article>
+      </div>
+      <div className="cta-strip">
+        <div>
+          <strong>Ready to test the path that matters?</strong>
+          <span>Start locally, then take the evidence to your team.</span>
+        </div>
+        <div className="cta-links">
+          <button className="primary-button" onClick={() => navigate("docs")}>
+            Read the docs <span>→</span>
+          </button>
+          <a href={productLinks.npm} target="_blank" rel="noreferrer">
+            Browse npm ↗
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
 function Metric({

@@ -1117,6 +1117,233 @@ h2 {
     flex-direction: column;
   }
 }
+
+/* Product landing layer */
+.product-landing {
+  margin: 4px 0 10px;
+  padding: 30px;
+  border: 1px solid #cbded7;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      circle at 92% 5%,
+      rgba(158, 211, 190, 0.26),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #f0f8f2 0%, #fff 58%);
+}
+.product-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  padding-bottom: 27px;
+  border-bottom: 1px solid #d8e7df;
+}
+.product-intro h2 {
+  max-width: 630px;
+  font-size: clamp(25px, 3vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  margin: 11px 0 10px;
+  color: #143f43;
+}
+.product-intro p:not(.eyebrow) {
+  max-width: 650px;
+  color: #5f7475;
+  margin: 0;
+  font-size: 15px;
+}
+.product-actions,
+.cta-links,
+.deploy-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.product-actions {
+  flex-shrink: 0;
+}
+.secondary-button {
+  text-align: center;
+  text-decoration: none;
+}
+.feature-catalog {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 23px 0 25px;
+  border-bottom: 1px solid #d8e7df;
+}
+.feature-card {
+  padding: 0 19px;
+  border-left: 1px solid #d8e7df;
+}
+.feature-card:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.feature-number,
+.card-mark {
+  font:
+    11px "DM Mono",
+    monospace;
+  letter-spacing: 0.1em;
+  color: #74a693;
+}
+.feature-card h3 {
+  font-size: 15px;
+  margin: 11px 0 5px;
+  color: #21494b;
+}
+.feature-card p,
+.ecosystem-card p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b7d7d;
+  margin: 0;
+}
+.ecosystem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 24px 0;
+}
+.ecosystem-card {
+  padding: 20px;
+  border: 1px solid #d9e7e0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-mark {
+  color: #579b8b;
+  font-size: 13px;
+}
+.render-badge {
+  font-weight: 800;
+  font-size: 13px;
+  color: #1a8b71;
+  letter-spacing: -0.02em;
+}
+.ecosystem-card h3 {
+  font-size: 18px;
+  color: #234a4c;
+  margin: 13px 0 5px;
+}
+.package-links {
+  display: grid;
+  gap: 7px;
+  margin-top: 17px;
+}
+.package-links a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 5px;
+  background: #f4f9f5;
+  color: #28695e;
+}
+.package-links a:hover {
+  background: #e8f3ed;
+}
+.package-links code {
+  font:
+    12px "DM Mono",
+    monospace;
+}
+.package-links span {
+  color: #718381;
+  font-size: 11px;
+}
+.deploy-links {
+  margin-top: 18px;
+}
+.deploy-links a,
+.cta-links a {
+  color: #26776b;
+  font-size: 13px;
+  font-weight: 800;
+}
+.cta-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 22px;
+  border-top: 1px solid #d8e7df;
+}
+.cta-strip strong,
+.cta-strip span {
+  display: block;
+}
+.cta-strip strong {
+  color: #21484a;
+  font-size: 15px;
+}
+.cta-strip span {
+  color: #748381;
+  font-size: 13px;
+  margin-top: 3px;
+}
+.cta-links {
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .feature-catalog {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 0;
+  }
+  .feature-card:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .product-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 680px) {
+  .product-landing {
+    padding: 21px 17px;
+  }
+  .product-actions {
+    width: 100%;
+  }
+  .product-actions > * {
+    flex: 1;
+    justify-content: center;
+  }
+  .feature-catalog,
+  .ecosystem-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-card,
+  .feature-card:nth-child(3) {
+    padding: 15px 0 0;
+    border-left: 0;
+    border-top: 1px solid #d8e7df;
+  }
+  .feature-card:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .cta-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .cta-links {
+    justify-content: flex-start;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

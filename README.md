@@ -366,12 +366,24 @@ Without a baseline, all failing findings at or above the threshold are evaluated
 
 ## 📦 Use as a library
 
-The packages are currently workspace packages and are **not published to npm yet**. Use them from this repository today:
+The first `0.1.0` packages are published on npm. You can use them directly or work from this repository:
 
 ```bash
 npm ci
 npm run build:cli
 npm run test:library
+```
+
+Published packages:
+
+- [`@a11ypilot/core`](https://www.npmjs.com/package/@a11ypilot/core)
+- [`@a11ypilot/reporters`](https://www.npmjs.com/package/@a11ypilot/reporters)
+- [`@a11ypilot/cli`](https://www.npmjs.com/package/@a11ypilot/cli)
+
+Install the CLI with:
+
+```bash
+npm install --save-dev @a11ypilot/cli
 ```
 
 Example programmatic usage:
@@ -400,7 +412,7 @@ console.log(jsonReport(result));
 await browser.close();
 ```
 
-The current published-library milestone is not complete yet. The next package milestone is `@a11ypilot/playwright`, which will reuse an existing Playwright test's `page`, auth state, mocks, and fixtures.
+The next package milestone is `@a11ypilot/playwright`, which will reuse an existing Playwright test's `page`, auth state, mocks, and fixtures.
 
 ---
 
@@ -468,9 +480,9 @@ docker run --rm -p 4173:4173 a11ypilot:local
 
 Open <http://localhost:4173>.
 
-### Render Blueprint
+### Render web service (recommended)
 
-The deploy branch includes `render.yaml` configured for Docker deployment:
+Create a standard Render **Web Service** from the `deploy/render` branch. The deploy branch includes a Dockerfile configured for the dashboard:
 
 ```text
 Branch: deploy/render
@@ -482,19 +494,21 @@ Port: 4173
 Deploy it on Render:
 
 1. Push the `deploy/render` branch to GitHub.
-2. In Render, choose **New → Blueprint**.
+2. In Render, choose **New → Web Service**.
 3. Connect `Raphel6969/A11yPilot`.
 4. Select the `deploy/render` branch.
-5. Review the Docker web service from `render.yaml`.
-6. Create the Blueprint.
-7. Wait for the Docker build and health check.
-8. Open the generated Render URL.
+5. Choose **Docker** as the runtime.
+6. Set Dockerfile path to `./Dockerfile` and Docker context to `.`.
+7. Set the health check path to `/`.
+8. Create the service.
+9. Wait for the Docker build and health check.
+10. Open the generated Render URL.
 
 The current Render deployment is the dashboard/demo container. It is not yet a hosted multi-user runner or remote job API. Do not put secrets into the image or repository.
 
-### Manual Render Docker service
+### Render service settings
 
-If you do not use Blueprint:
+Use these values in the Web Service form:
 
 ```text
 Environment: Docker
@@ -610,8 +624,7 @@ Confirm the service uses the `deploy/render` branch, Dockerfile path `./Dockerfi
 This is an MVP/buildathon project. The next production milestones are:
 
 1. push and verify the deploy branch,
-2. publish the npm packages,
-3. ship `@a11ypilot/playwright`,
+2. ship `@a11ypilot/playwright`,
 4. ship a reusable GitHub Action,
 5. add authenticated `storageState` journeys,
 6. add hosted runs and scheduled monitoring only after the local/library contracts stabilize.
