@@ -24,8 +24,18 @@ const rawStepSchema = z
       .strict()
       .optional(),
     expectStatus: z
-      .object({ text: z.string().min(1), role: z.string().optional() })
+      .object({
+        role: z.string().min(1).optional(),
+        text: z.string().min(1).optional(),
+        containsText: z.string().min(1).optional(),
+      })
       .strict()
+      .refine(
+        (value) => value.text !== undefined || value.containsText !== undefined,
+        {
+          message: "expectStatus requires text or containsText",
+        },
+      )
       .optional(),
     snapshot: z.boolean().optional(),
   })
@@ -63,6 +73,11 @@ export const journeySchema = z
   })
   .strict();
 export type Target = z.infer<typeof targetSchema>;
+export type StatusExpectation = {
+  role?: string;
+  text?: string;
+  containsText?: string;
+};
 export type RawStep = z.infer<typeof rawStepSchema>;
 export type Journey = z.infer<typeof journeySchema>;
 export type NormalizedStep = { id: string; goal?: string; action: RawStep };

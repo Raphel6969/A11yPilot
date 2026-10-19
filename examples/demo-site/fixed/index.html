@@ -32,6 +32,16 @@
         margin-top: 2rem;
         padding: 1rem;
       }
+      .form-demo {
+        border: 2px solid #287a3d;
+        margin-top: 2rem;
+        padding: 1rem;
+      }
+      label,
+      input {
+        display: block;
+        margin: 0.35rem 0;
+      }
     </style>
   </head>
   <body>
@@ -44,6 +54,22 @@
       <button id="open-dialog" type="button" aria-haspopup="dialog">
         Open help dialog
       </button>
+      <section class="form-demo" aria-labelledby="form-heading">
+        <h2 id="form-heading">Profile form</h2>
+        <form id="profile-form">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            aria-describedby="email-error"
+          />
+          <p id="email-error">Enter a valid email address.</p>
+          <button id="save-profile" type="submit">Save profile</button>
+          <div id="save-status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
       <section class="trap-demo" aria-labelledby="trap-heading">
         <h2 id="trap-heading">Keyboard trap</h2>
         <p>
@@ -68,6 +94,14 @@
         close.focus();
       });
       close.addEventListener("click", () => dialog.close());
+      document
+        .querySelector("#profile-form")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const email = document.querySelector("#email");
+          email.setAttribute("aria-invalid", "true");
+          document.querySelector("#save-status").textContent = "Saved";
+        });
       dialog.addEventListener("cancel", (event) => {
         event.preventDefault();
         dialog.close();

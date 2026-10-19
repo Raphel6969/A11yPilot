@@ -17,6 +17,28 @@ export type Evidence = {
   focusVisible?: boolean;
   screenshot?: string;
   accessibilitySnapshot?: string;
+  error?: ErrorEvidence;
+  status?: {
+    role?: string;
+    text?: string;
+    live?: string;
+    semantic?: boolean;
+    focused?: boolean;
+    changed?: boolean;
+  };
+};
+export type ErrorEvidence = {
+  field: {
+    exists: boolean;
+    focused: boolean;
+    ariaInvalid?: boolean;
+    describedBy: string[];
+    errorMessage?: string;
+    validationMessage?: string;
+  };
+  descriptions: string[];
+  errors: string[];
+  liveRegions: Array<{ role?: string; ariaLive?: string; text: string }>;
 };
 export type Finding = {
   id: string;
@@ -46,6 +68,14 @@ export type ActionTrace = {
   tabStops: string[];
   screenshot?: string;
   accessibilitySnapshot?: string;
+  status?: {
+    role?: string;
+    text?: string;
+    live?: string;
+    semantic?: boolean;
+    focused?: boolean;
+    changed?: boolean;
+  };
 };
 export type JourneyResult = {
   schemaVersion: 1;

@@ -9,6 +9,8 @@ const variants = ["broken", "fixed"];
 const journeys = [
   ["modal-focus-return.yml", "focus-return"],
   ["keyboard-trap.yml", "no-keyboard-trap"],
+  ["error-identification.yml", "error-identification"],
+  ["status-announcement.yml", "status-announcement"],
 ];
 
 const server = createServer(async (request, response) => {

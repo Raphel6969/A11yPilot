@@ -1,12 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import type { Page } from "playwright-core";
-import type { Journey, NormalizedStep, Target } from "./schema.js";
+import type {
+  Journey,
+  NormalizedStep,
+  StatusExpectation,
+  Target,
+} from "./schema.js";
 import {
   defaultOracles,
   type AxSnapshot,
   type Oracle,
   type OracleContext,
+  type StatusObservation,
 } from "./oracle.js";
 import {
   statusFor,
@@ -14,6 +20,7 @@ import {
   type Finding,
   type RunResult,
 } from "./model.js";
+import type { ErrorEvidence } from "./model.js";
 import { PlaywrightKeyboardPage } from "./playwright-page.js";
 export type FocusStop = { selector: string; role?: string; name?: string };
 export interface KeyboardPage {
@@ -29,6 +36,10 @@ export interface KeyboardPage {
   goto(url: string): Promise<void>;
   screenshot(path: string): Promise<void>;
   accessibilitySnapshot?(): Promise<AxSnapshot | null>;
+  observeError?(target: Target): Promise<ErrorEvidence>;
+  observeStatus?(
+    expectation: StatusExpectation,
+  ): Promise<StatusObservation | null>;
 }
 export class KeyboardNavigator {
   constructor(private readonly page: KeyboardPage) {}
@@ -88,6 +99,7 @@ async function executeJourney(
   const navigator = new KeyboardNavigator(page);
   const traces: ActionTrace[] = [];
   const findings: Finding[] = [];
+  let lastUserAction = false;
   await page.goto(journey.start);
   for (const [stepIndex, step] of steps.entries()) {
     const stepStarted = Date.now();
@@ -136,7 +148,10 @@ async function executeJourney(
         before: emptySnapshot(),
         after: emptySnapshot(),
       });
-      if (reached.reached) await navigator.type(step.action.type.text);
+      if (reached.reached) {
+        await navigator.type(step.action.type.text);
+        lastUserAction = true;
+      }
     } else if ("activate" in step.action && step.action.activate) {
       target = step.action.activate;
       const reached = await navigator.reach(
@@ -156,7 +171,41 @@ async function executeJourney(
         before: emptySnapshot(),
         after: emptySnapshot(),
       });
+      if (reached.reached) {
+        await navigator.press("Enter");
+        lastUserAction = true;
+      }
+    } else if ("expectError" in step.action && step.action.expectError) {
+      target = step.action.expectError.field;
+      const reached = await navigator.reach(
+        target,
+        journey.options.maxTabStops,
+      );
+      stops.push(...reached.stops.map((s) => s.selector));
+      const before = page.observeError
+        ? await page.observeError(target)
+        : undefined;
+      // Enter is the least surprising keyboard submission for a focused form field.
+      // It preserves the user's keyboard-only journey and lets native validation run.
       if (reached.reached) await navigator.press("Enter");
+      if (reached.reached) lastUserAction = true;
+      const after = page.observeError
+        ? await page.observeError(target)
+        : undefined;
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        target,
+        reached: reached.reached,
+        tabStops: reached.stops,
+        focused: await page.activeFocus(),
+        focusVisible: page.focusVisible ? await page.focusVisible() : null,
+        before: { children: [] },
+        after: { children: [] },
+        errorBefore: before,
+        errorAfter: after,
+      });
     } else if ("expectDialog" in step.action && step.action.expectDialog) {
       target = step.action.expectDialog.opensFrom;
       const reached = await navigator.reach(
@@ -168,6 +217,7 @@ async function executeJourney(
       if (reached.reached) {
         await navigator.press("Enter");
         await navigator.press(step.action.expectDialog.closesWith);
+        lastUserAction = true;
       }
       const focused = await page.activeFocus();
       stepFindings = await evaluateOracles(oracles, {
@@ -183,8 +233,25 @@ async function executeJourney(
         before: emptySnapshot(),
         after: emptySnapshot(),
       });
-    } else if ("press" in step.action && step.action.press)
+    } else if ("press" in step.action && step.action.press) {
       await navigator.press(step.action.press.key);
+      lastUserAction = true;
+    } else if ("expectStatus" in step.action && step.action.expectStatus) {
+      const status =
+        lastUserAction && page.observeStatus
+          ? await page.observeStatus(step.action.expectStatus)
+          : undefined;
+      stepFindings = await evaluateOracles(oracles, {
+        page: browserPage,
+        step,
+        stepIndex,
+        tabStops: [],
+        before: emptySnapshot(),
+        after: (await page.accessibilitySnapshot?.()) ?? emptySnapshot(),
+        status: status ?? undefined,
+      });
+      lastUserAction = false;
+    }
     const capture = evidenceDir && action !== "goto";
     const evidence = capture
       ? await captureStepEvidence(page, evidenceDir, stepIndex, step.id)

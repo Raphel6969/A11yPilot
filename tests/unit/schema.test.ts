@@ -49,4 +49,32 @@ describe("journey schema", () => {
     });
     expect(result.steps[0].expectDialog?.closesWith).toBe("Escape");
   });
+  it("accepts an executable field error expectation with optional announcement", () => {
+    const result = journeySchema.parse({
+      version: 1,
+      name: "Validation",
+      start: "http://localhost",
+      steps: [
+        {
+          expectError: {
+            field: { role: "textbox", name: "Email" },
+            announced: true,
+          },
+        },
+      ],
+    });
+    expect(result.steps[0].expectError?.announced).toBe(true);
+  });
+  it("accepts text and containsText status compatibility", () => {
+    const result = journeySchema.parse({
+      version: 1,
+      name: "Status",
+      start: "http://localhost",
+      steps: [
+        { expectStatus: { role: "status", containsText: "Saved" } },
+        { expectStatus: { text: "Saved" } },
+      ],
+    });
+    expect(result.steps[0].expectStatus?.containsText).toBe("Saved");
+  });
 });

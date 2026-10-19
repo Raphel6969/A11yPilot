@@ -1,7 +1,7 @@
 import type { Page } from "playwright-core";
-import type { Finding, Status } from "./model.js";
+import type { ErrorEvidence, Finding, Status } from "./model.js";
 import type { FocusStop } from "./runner.js";
-import type { NormalizedStep, Target } from "./schema.js";
+import type { NormalizedStep, StatusExpectation, Target } from "./schema.js";
 
 export type OracleContext = {
   page: Page;
@@ -15,6 +15,18 @@ export type OracleContext = {
   before: AxSnapshot;
   after: AxSnapshot;
   previousFocus?: FocusStop;
+  errorBefore?: ErrorEvidence;
+  errorAfter?: ErrorEvidence;
+  status?: StatusObservation;
+};
+export type StatusObservation = {
+  exists: boolean;
+  role?: string;
+  text?: string;
+  live?: string;
+  semantic: boolean;
+  focused: boolean;
+  changed?: boolean;
 };
 export type AxSnapshot = {
   role?: string;
@@ -135,6 +147,14 @@ function oracleFinding(
         "expectDialog" in context.step.action
           ? context.step.action.expectDialog
           : undefined,
+      expectStatus:
+        "expectStatus" in context.step.action
+          ? context.step.action.expectStatus
+          : undefined,
+      expectError:
+        "expectError" in context.step.action
+          ? context.step.action.expectError
+          : undefined,
     }),
     stepId: context.step.id,
     outcome: status,
@@ -203,6 +223,76 @@ export const noKeyboardTrapOracle: Oracle = {
       "warning",
       evidence,
       "Verify manually that keyboard focus can leave the component in every direction required by the interaction.",
+    );
+  },
+};
+
+export const errorIdentificationOracle: Oracle = {
+  id: "error-identification",
+  evaluate(context) {
+    const action = context.step.action;
+    if (!("expectError" in action) || action.expectError === undefined)
+      return undefined;
+    const evidence = context.errorAfter;
+    const evidenceForFinding = {
+      tabStops: context.tabStops.map((stop) => stop.selector),
+      focused: context.focused?.selector,
+      error: evidence,
+    };
+    if (evidence === undefined || context.reached !== true) {
+      return oracleFinding(
+        context,
+        "error-identification",
+        "needs-review",
+        "The field or its post-submission error state was not captured, so error identification could not be judged.",
+        ["3.3.1"],
+        "warning",
+        evidenceForFinding,
+        "Capture the field state and related error or description content after keyboard submission.",
+      );
+    }
+    const fieldError =
+      (evidence.field.ariaInvalid === true &&
+        evidence.descriptions.length > 0) ||
+      Boolean(evidence.field.errorMessage) ||
+      Boolean(evidence.field.validationMessage) ||
+      evidence.errors.length > 0;
+    const announced =
+      evidence.field.describedBy.length > 0 ||
+      Boolean(evidence.field.errorMessage) ||
+      evidence.liveRegions.some((region) => region.text.length > 0);
+    if (!fieldError) {
+      return oracleFinding(
+        context,
+        "error-identification",
+        "fail",
+        "Submitting the form did not expose an identifiable error for the field.",
+        ["3.3.1"],
+        "serious",
+        evidenceForFinding,
+        "Expose a specific error message and associate it with the invalid field.",
+      );
+    }
+    if (action.expectError.announced === true && !announced) {
+      return oracleFinding(
+        context,
+        "error-identification",
+        "fail",
+        "An error was exposed, but no programmatic description or live-region announcement was captured.",
+        ["3.3.1"],
+        "serious",
+        evidenceForFinding,
+        "Associate the error with the field using an accessible description or announce it in a live region.",
+      );
+    }
+    return oracleFinding(
+      context,
+      "error-identification",
+      "pass",
+      "The submitted field exposed an identifiable error state and related evidence.",
+      ["3.3.1"],
+      "info",
+      evidenceForFinding,
     );
   },
 };
@@ -299,9 +389,85 @@ export const focusReturnOracle: Oracle = {
   },
 };
 
+function statusMatches(
+  expectation: StatusExpectation,
+  observed: StatusObservation,
+) {
+  if (!observed.exists) return false;
+  if (expectation.role !== undefined && observed.role !== expectation.role)
+    return false;
+  const text = observed.text ?? "";
+  if (expectation.text !== undefined && text !== expectation.text) return false;
+  if (
+    expectation.containsText !== undefined &&
+    !text.includes(expectation.containsText)
+  )
+    return false;
+  return true;
+}
+
+export const statusAnnouncementOracle: Oracle = {
+  id: "status-announcement",
+  evaluate(context) {
+    const action = context.step.action;
+    if (!("expectStatus" in action) || action.expectStatus === undefined)
+      return undefined;
+    const observed = context.status;
+    const evidence = {
+      tabStops: context.tabStops.map((stop) => stop.selector),
+      focused: context.focused?.selector,
+      status: observed,
+    };
+    if (observed === undefined)
+      return oracleFinding(
+        context,
+        "status-announcement",
+        "needs-review",
+        "The expected status was not observed through the page accessibility bridge.",
+        ["4.1.3"],
+        "warning",
+        evidence,
+        "Capture the status through a status, alert, log, aria-live, or focused announcement element after the preceding action.",
+      );
+    if (!statusMatches(action.expectStatus, observed))
+      return oracleFinding(
+        context,
+        "status-announcement",
+        "fail",
+        "The expected status announcement was not found.",
+        ["4.1.3"],
+        "serious",
+        evidence,
+        "Expose the expected message through an accessible status, alert, log, live region, or focused announcement.",
+      );
+    if (!observed.semantic && !observed.focused)
+      return oracleFinding(
+        context,
+        "status-announcement",
+        "fail",
+        "The expected text is present but has no status semantics, live-region exposure, or focus evidence.",
+        ["4.1.3"],
+        "serious",
+        evidence,
+        "Use role=status, role=alert, role=log, aria-live, or move focus to the announcement.",
+      );
+    return oracleFinding(
+      context,
+      "status-announcement",
+      "pass",
+      "The expected status was observed with accessibility announcement evidence.",
+      ["4.1.3"],
+      "info",
+      evidence,
+    );
+  },
+};
+
 export const defaultOracles: Oracle[] = [
   reachabilityOracle,
   noKeyboardTrapOracle,
   focusVisibleOracle,
   focusReturnOracle,
+  statusAnnouncementOracle,
+  errorIdentificationOracle,
 ];

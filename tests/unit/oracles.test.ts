@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultOracles,
+  errorIdentificationOracle,
   focusVisibleOracle,
   focusReturnOracle,
   noKeyboardTrapOracle,
   reachabilityOracle,
   reachabilityFinding,
   stableFingerprint,
+  statusAnnouncementOracle,
 } from "../../packages/core/src/index.js";
 
 const step = {
@@ -122,6 +124,52 @@ describe("evidence-backed oracle foundation", () => {
     });
   });
 
+  it("maps accessible status announcements to WCAG 4.1.3", () => {
+    const statusStep = {
+      id: "step-002",
+      action: { expectStatus: { role: "status", containsText: "Saved" } },
+    } as const;
+    const base = {
+      page: undefined as never,
+      step: statusStep,
+      stepIndex: 1,
+      tabStops: [],
+      before: { children: [] },
+      after: { children: [] },
+    };
+    expect(
+      statusAnnouncementOracle.evaluate({
+        ...base,
+        status: {
+          exists: true,
+          role: "status",
+          text: "Saved",
+          semantic: true,
+          focused: false,
+        },
+      }),
+    ).toMatchObject({
+      oracle: "status-announcement",
+      status: "pass",
+      wcag: ["4.1.3"],
+    });
+    expect(statusAnnouncementOracle.evaluate(base)).toMatchObject({
+      status: "needs-review",
+      wcag: ["4.1.3"],
+    });
+    expect(
+      statusAnnouncementOracle.evaluate({
+        ...base,
+        status: {
+          exists: true,
+          text: "Saved",
+          semantic: false,
+          focused: false,
+        },
+      }),
+    ).toMatchObject({ status: "fail" });
+  });
+
   describe("focus return", () => {
     const dialogStep = {
       id: "step-001",
@@ -180,6 +228,65 @@ describe("evidence-backed oracle foundation", () => {
           previousFocus: { selector: "#details" },
         }),
       ).toMatchObject({ oracle: "focus-return", status: "needs-review" });
+    });
+  });
+
+  describe("error identification", () => {
+    const errorStep = {
+      id: "step-002",
+      action: {
+        expectError: {
+          field: { role: "textbox", name: "Email" },
+          announced: true,
+        },
+      },
+    } as const;
+    const errorContext = {
+      page: undefined as never,
+      step: errorStep,
+      stepIndex: 1,
+      target: errorStep.action.expectError.field,
+      reached: true,
+      tabStops: [{ selector: "#email" }],
+      focused: { selector: "#email" },
+      before: { children: [] },
+      after: { children: [] },
+    };
+
+    it("passes with invalid state and associated live evidence", () => {
+      expect(
+        errorIdentificationOracle.evaluate({
+          ...errorContext,
+          errorAfter: {
+            field: {
+              exists: true,
+              focused: true,
+              ariaInvalid: true,
+              describedBy: ["email-error"],
+            },
+            descriptions: ["Enter a valid email address."],
+            errors: ["Enter a valid email address."],
+            liveRegions: [
+              {
+                role: "alert",
+                ariaLive: "assertive",
+                text: "Enter a valid email address.",
+              },
+            ],
+          },
+        }),
+      ).toMatchObject({
+        oracle: "error-identification",
+        status: "pass",
+        wcag: ["3.3.1"],
+      });
+    });
+
+    it("keeps missing bridge evidence at needs-review", () => {
+      expect(errorIdentificationOracle.evaluate(errorContext)).toMatchObject({
+        oracle: "error-identification",
+        status: "needs-review",
+      });
     });
   });
 });
