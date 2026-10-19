@@ -80,6 +80,16 @@ const pageLabels: Record<Page, string> = {
   settings: "Settings",
   docs: "Documentation",
 };
+const productLinks = {
+  repository: "https://github.com/Raphel6969/A11yPilot",
+  npm: "https://www.npmjs.com/org/a11ypilot",
+  core: "https://www.npmjs.com/package/@a11ypilot/core",
+  reporters: "https://www.npmjs.com/package/@a11ypilot/reporters",
+  cli: "https://www.npmjs.com/package/@a11ypilot/cli",
+  docs: "https://github.com/Raphel6969/A11yPilot#readme",
+  examples: "https://github.com/Raphel6969/A11yPilot/tree/main/examples",
+  render: "https://render.com/docs",
+};
 const readStorage = <T,>(key: string, fallback: T): T => {
   try {
     return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
@@ -117,6 +127,7 @@ export function App() {
     localStorage.setItem("a11ypilot-runs", JSON.stringify(runs));
   }, [runs]);
   useEffect(() => {
+    if (import.meta.env.MODE === "test") return;
     const ctx = gsap.context(() => {
       gsap.from(".page-view", {
         opacity: 0,
@@ -178,6 +189,9 @@ export function App() {
     );
     if (goHistory) navigate("runs");
   };
+  if (page === "overview") {
+    return <ShowcasePage navigate={navigate} runJourney={runJourney} />;
+  }
   return (
     <div className="app-shell" ref={contentRef}>
       <Sidebar page={page} navigate={navigate} mobile={mobileNav} />
@@ -215,15 +229,6 @@ export function App() {
           </div>
         </header>
         <div className="page-content page-view" ref={contentRef}>
-          {page === "overview" && (
-            <Overview
-              journeys={journeys}
-              runs={runs}
-              navigate={navigate}
-              openNew={() => setShowModal(true)}
-              runJourney={runJourney}
-            />
-          )}
           {page === "journeys" && (
             <Journeys
               journeys={journeys}
@@ -362,6 +367,657 @@ function Header({
     </section>
   );
 }
+function ShowcasePage({
+  navigate,
+  runJourney,
+}: {
+  navigate: (p: Page) => void;
+  runJourney: (j: Journey, goHistory?: boolean) => void;
+}) {
+  const [fixed, setFixed] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [complete, setComplete] = useState(false);
+  const [email, setEmail] = useState("");
+  const showcaseRef = useRef<HTMLDivElement>(null);
+  const recovery = starterJourneys.find(
+    (journey) => journey.id === "recovery",
+  )!;
+
+  useEffect(() => {
+    if (import.meta.env.MODE === "test") return;
+    const ctx = gsap.context(() => {
+      gsap.from(".showcase-nav", { y: -24, opacity: 0, duration: 0.7 });
+      gsap.from(".showcase-kicker, .showcase-title, .showcase-lede", {
+        y: 36,
+        opacity: 0,
+        duration: 0.9,
+        stagger: 0.1,
+        ease: "power3.out",
+      });
+      gsap.from(".hero-console", {
+        x: 80,
+        opacity: 0,
+        duration: 1.1,
+        delay: 0.25,
+        ease: "power3.out",
+      });
+      gsap.utils.toArray<HTMLElement>(".reveal-card").forEach((card, index) => {
+        gsap.from(card, {
+          scrollTrigger: undefined,
+          y: 40,
+          opacity: 0,
+          duration: 0.7,
+          delay: index * 0.04,
+          ease: "power2.out",
+        });
+      });
+    }, showcaseRef);
+    return () => ctx.revert();
+  }, []);
+
+  const runDemo = () => {
+    setRunning(true);
+    setComplete(false);
+    window.setTimeout(() => {
+      setRunning(false);
+      setComplete(true);
+      runJourney(
+        { ...recovery, status: fixed ? "passed" : "attention" },
+        false,
+      );
+    }, 700);
+  };
+
+  return (
+    <div className="showcase-page" ref={showcaseRef}>
+      <nav className="showcase-nav" aria-label="Showcase navigation">
+        <a className="showcase-brand" href="#overview">
+          <span className="showcase-brand-mark">a</span>
+          <span>A11yPilot</span>
+        </a>
+        <div className="showcase-nav-links">
+          <a href="#how-it-works">How it works</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#packages">Packages</a>
+          <a href="#use-cases">Use cases</a>
+        </div>
+        <div className="showcase-nav-actions">
+          <a href={productLinks.docs} target="_blank" rel="noreferrer">
+            Docs ↗
+          </a>
+          <a
+            className="showcase-nav-button"
+            href={productLinks.repository}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on GitHub ↗
+          </a>
+        </div>
+      </nav>
+
+      <main>
+        <section
+          className="showcase-hero-section"
+          aria-labelledby="showcase-title"
+        >
+          <div className="showcase-hero-copy">
+            <p className="showcase-kicker">
+              <span /> BROWSER-REAL ACCESSIBILITY EVIDENCE
+            </p>
+            <h1 className="showcase-title" id="showcase-title">
+              Test the journey.
+              <br />
+              <em>Prove the fix.</em>
+            </h1>
+            <p className="showcase-lede">
+              A11yPilot turns the keyboard paths your customers depend on into
+              deterministic checks, visual evidence, and CI-ready regression
+              gates.
+            </p>
+            <div className="showcase-hero-actions">
+              <button
+                className="showcase-primary"
+                onClick={() => navigate("docs")}
+              >
+                Read the documentation <span>→</span>
+              </button>
+              <button
+                className="showcase-ghost"
+                onClick={() => navigate("journeys")}
+              >
+                Open interactive workspace →
+              </button>
+              <a
+                className="showcase-ghost"
+                href={productLinks.examples}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Explore the examples ↗
+              </a>
+            </div>
+            <div className="showcase-proof-row">
+              <span>✓ Real Chromium</span>
+              <span>✓ YAML journeys</span>
+              <span>✓ WCAG-mapped oracles</span>
+            </div>
+          </div>
+          <div
+            className="hero-console"
+            aria-label="A11yPilot product flow preview"
+          >
+            <div className="console-top">
+              <span className="console-dots">
+                <i />
+                <i />
+                <i />
+              </span>
+              <code>journeys / checkout.yml</code>
+              <span className="console-live">● LIVE RUN</span>
+            </div>
+            <div className="console-body">
+              <div className="console-code">
+                <span className="code-comment"># the customer path</span>
+                <span>
+                  <b>journey:</b> complete-checkout
+                </span>
+                <span>
+                  <b>start:</b> /checkout
+                </span>
+                <span className="code-gap" />
+                <span>
+                  <b>steps:</b>
+                </span>
+                <span>
+                  {" "}
+                  - expect: <em>textbox “Email”</em>
+                </span>
+                <span>
+                  {" "}
+                  - type: <em>person@example.com</em>
+                </span>
+                <span>
+                  {" "}
+                  - activate: <em>button “Place order”</em>
+                </span>
+              </div>
+              <div className="console-result">
+                <div className="result-orbit">
+                  <span>⌁</span>
+                </div>
+                <span className="result-label">ORACLES RUNNING</span>
+                <strong>Evidence captured</strong>
+                <div className="result-meter">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <small>focus-visible · reachability · no-trap</small>
+              </div>
+            </div>
+            <div className="console-footer">
+              <span>● chromium / keyboard-only</span>
+              <strong>03 / 04 steps</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="signal-strip" aria-label="Product promise">
+          <span>FROM INTENT</span>
+          <b>→</b>
+          <span>TO OBSERVATION</span>
+          <b>→</b>
+          <span>TO EVIDENCE</span>
+          <b>→</b>
+          <span>TO CONFIDENT SHIP</span>
+        </section>
+
+        <section
+          className="showcase-section"
+          id="how-it-works"
+          aria-labelledby="how-heading"
+        >
+          <div className="section-heading">
+            <p className="showcase-kicker">THE SYSTEM</p>
+            <h2 id="how-heading">
+              One workflow.
+              <br />
+              <em>Four clear signals.</em>
+            </h2>
+            <p>
+              We connect the human task to the browser observation, then make
+              every result reviewable.
+            </p>
+          </div>
+          <div className="flow-diagram">
+            {[
+              ["01", "Describe", "A readable YAML journey", "⌘"],
+              ["02", "Drive", "Real Chromium input", "⌁"],
+              ["03", "Evaluate", "Focused WCAG oracles", "✳"],
+              ["04", "Report", "Evidence your team can ship", "↗"],
+            ].map(([number, title, copy, icon], index) => (
+              <div className="flow-step reveal-card" key={number}>
+                <div className="flow-icon">{icon}</div>
+                <span className="flow-number">{number}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+                {index < 3 && (
+                  <span className="flow-connector" aria-hidden="true">
+                    →
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          className="showcase-section dark-section"
+          id="capabilities"
+          aria-labelledby="capabilities-heading"
+        >
+          <div className="section-heading dark-heading">
+            <p className="showcase-kicker">OUT OF THE BOX</p>
+            <h2 id="capabilities-heading">
+              Find the failures
+              <br />
+              <em>that scanners miss.</em>
+            </h2>
+            <p>
+              Small, deterministic checks for the places real users lose
+              momentum.
+            </p>
+          </div>
+          <div className="capability-grid">
+            {[
+              [
+                "Reachability",
+                "Can the target be reached with Tab?",
+                "2.1.1",
+                "01",
+              ],
+              [
+                "Keyboard traps",
+                "Does focus advance without getting stuck?",
+                "2.1.2",
+                "02",
+              ],
+              [
+                "Focus return",
+                "Does a dialog return focus to its trigger?",
+                "2.4.3",
+                "03",
+              ],
+              [
+                "Error & status",
+                "Can feedback be perceived and identified?",
+                "3.3.1 · 4.1.3",
+                "04",
+              ],
+            ].map(([title, copy, wcag, number]) => (
+              <article className="capability-card reveal-card" key={title}>
+                <span className="capability-number">{number}</span>
+                <span className="capability-wcag">WCAG {wcag}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+                <span className="capability-arrow">↗</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
+          className="showcase-section demo-showcase"
+          id="demo"
+          aria-labelledby="demo-heading"
+        >
+          <div className="section-heading">
+            <p className="showcase-kicker">INTERACTIVE PROOF</p>
+            <h2 id="demo-heading">
+              A visible barrier.
+              <br />
+              <em>A measurable fix.</em>
+            </h2>
+            <p>
+              Switch the seeded form between its broken and fixed states, then
+              run the same journey.
+            </p>
+          </div>
+          <div className="showcase-demo-card">
+            <div className="demo-control-column">
+              <div
+                className="demo-state-buttons"
+                role="group"
+                aria-label="Demo state"
+              >
+                <button
+                  className={!fixed ? "active" : ""}
+                  onClick={() => {
+                    setFixed(false);
+                    setComplete(false);
+                  }}
+                >
+                  Broken
+                </button>
+                <button
+                  className={fixed ? "active fixed" : ""}
+                  onClick={() => {
+                    setFixed(true);
+                    setComplete(false);
+                  }}
+                >
+                  Fixed
+                </button>
+              </div>
+              <div className="demo-check-list">
+                <span className="done">01</span>
+                <div>
+                  <strong>Focus the email field</strong>
+                  <small>Keyboard reachability</small>
+                </div>
+                <span className="done">02</span>
+                <div>
+                  <strong>Submit the form</strong>
+                  <small>Error identification</small>
+                </div>
+                <span className="pending">03</span>
+                <div>
+                  <strong>Announce the result</strong>
+                  <small>Status announcement</small>
+                </div>
+              </div>
+              <div
+                className={`showcase-run-result ${complete ? "show" : ""}`}
+                aria-live="polite"
+              >
+                {complete && (
+                  <>
+                    <strong>
+                      {fixed ? "Journey passed" : "1 barrier found"}
+                    </strong>
+                    <span>
+                      {fixed
+                        ? "All 4 steps completed with no barriers."
+                        : "Error is visible, but not announced."}
+                    </span>
+                  </>
+                )}
+              </div>
+              <button
+                className="showcase-run"
+                onClick={runDemo}
+                disabled={running}
+              >
+                {running ? (
+                  "◌ Running journey…"
+                ) : (
+                  <>
+                    Run this journey <span>→</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <div className={`showcase-browser ${fixed ? "fixed" : ""}`}>
+              <div className="browser-toolbar">
+                <span>● ● ●</span>
+                <code>localhost:4173 / checkout</code>
+                <b>{fixed ? "PASS" : "ATTENTION"}</b>
+              </div>
+              <div className="browser-form">
+                <span className="form-kicker">ACME CHECKOUT / STEP 2 OF 3</span>
+                <h3>Almost there.</h3>
+                <p>Enter your details to finish your order.</p>
+                <label htmlFor="showcase-email">Email address</label>
+                <input
+                  id="showcase-email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  aria-invalid={!fixed}
+                  aria-describedby="showcase-error"
+                />
+                <div
+                  id="showcase-error"
+                  className="showcase-error"
+                  role={fixed ? "status" : undefined}
+                >
+                  {fixed
+                    ? "✓ Email looks good. Error announced."
+                    : "Please enter a valid email address."}
+                </div>
+                <button onClick={() => setEmail(email || "person@example.com")}>
+                  {fixed ? "Continue to payment →" : "Continue →"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="showcase-section evidence-showcase"
+          aria-labelledby="evidence-heading"
+        >
+          <div className="evidence-copy">
+            <p className="showcase-kicker">THE OUTPUT</p>
+            <h2 id="evidence-heading">
+              Every run leaves
+              <br />
+              <em>a trail.</em>
+            </h2>
+            <p>
+              Keep the why behind the result. A11yPilot turns a failed step into
+              artifacts your engineers, reviewers, and CI can act on.
+            </p>
+            <a
+              className="inline-link"
+              href={productLinks.docs}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the evidence guide →
+            </a>
+          </div>
+          <div className="evidence-stack">
+            <div className="evidence-file">
+              <span className="file-icon pink">PNG</span>
+              <div>
+                <strong>step-003-focus.png</strong>
+                <small>Visual focus evidence</small>
+              </div>
+              <b>captured</b>
+            </div>
+            <div className="evidence-file shifted">
+              <span className="file-icon blue">AX</span>
+              <div>
+                <strong>step-003.ax.json</strong>
+                <small>Normalized accessibility tree</small>
+              </div>
+              <b>captured</b>
+            </div>
+            <div className="evidence-file">
+              <span className="file-icon lime">DIFF</span>
+              <div>
+                <strong>checkout-baseline.json</strong>
+                <small>New · fixed · unchanged findings</small>
+              </div>
+              <b>gate ready</b>
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="showcase-section packages-showcase"
+          id="packages"
+          aria-labelledby="packages-heading"
+        >
+          <div className="section-heading">
+            <p className="showcase-kicker">THE ECOSYSTEM</p>
+            <h2 id="packages-heading">
+              Use one package.
+              <br />
+              <em>Or use the whole system.</em>
+            </h2>
+            <p>
+              Start from the CLI, embed the engine, or own the reporting
+              pipeline.
+            </p>
+          </div>
+          <div className="package-showcase-grid">
+            {[
+              [
+                "@a11ypilot/cli",
+                "Run journeys from the terminal and CI.",
+                productLinks.cli,
+                "CLI",
+              ],
+              [
+                "@a11ypilot/core",
+                "Drive journeys from your Playwright code.",
+                productLinks.core,
+                "CORE",
+              ],
+              [
+                "@a11ypilot/reporters",
+                "Turn findings into JSON, HTML, and SARIF.",
+                productLinks.reporters,
+                "REPORT",
+              ],
+            ].map(([name, copy, href, label]) => (
+              <a
+                className="package-showcase-card reveal-card"
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                key={name}
+              >
+                <span>{label}</span>
+                <code>{name}</code>
+                <p>{copy}</p>
+                <b>Read package docs ↗</b>
+              </a>
+            ))}
+          </div>
+          <div className="code-sample">
+            <div className="code-sample-top">
+              <span>quick-start.sh</span>
+              <span>bash</span>
+            </div>
+            <pre>
+              <code>
+                <span className="code-muted"># install the runner</span>
+                {"\n"}
+                <span className="code-green">npm install --save-dev</span>{" "}
+                @a11ypilot/cli{"\n"}
+                <span className="code-muted">
+                  # validate, run, and gate new findings
+                </span>
+                {"\n"}
+                <span className="code-green">npx a11ypilot validate</span>{" "}
+                journeys/checkout.yml{"\n"}
+                <span className="code-green">npx a11ypilot run</span>{" "}
+                journeys/checkout.yml --format sarif
+              </code>
+            </pre>
+          </div>
+        </section>
+
+        <section
+          className="showcase-section use-case-showcase"
+          id="use-cases"
+          aria-labelledby="use-cases-heading"
+        >
+          <div className="section-heading">
+            <p className="showcase-kicker">BUILT FOR THE MOMENTS THAT MATTER</p>
+            <h2 id="use-cases-heading">
+              Make accessibility
+              <br />
+              <em>part of the release.</em>
+            </h2>
+          </div>
+          <div className="use-case-grid">
+            {[
+              [
+                "01",
+                "Product teams",
+                "Turn important customer outcomes into readable, reviewable journeys.",
+              ],
+              [
+                "02",
+                "Design systems",
+                "Regression-test dialogs, menus, forms, and focus patterns as components evolve.",
+              ],
+              [
+                "03",
+                "Engineering teams",
+                "Catch new barriers in pull requests with baselines, SARIF, and deterministic gates.",
+              ],
+              [
+                "04",
+                "Accessibility teams",
+                "Give findings context: what happened, where focus went, and what evidence proves it.",
+              ],
+            ].map(([number, title, copy]) => (
+              <article
+                className="use-case-showcase-card reveal-card"
+                key={number}
+              >
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="final-cta">
+          <div>
+            <p className="showcase-kicker">READY WHEN YOU ARE</p>
+            <h2>
+              Ship the journey.
+              <br />
+              <em>Keep the evidence.</em>
+            </h2>
+          </div>
+          <div className="final-cta-actions">
+            <a
+              className="showcase-primary"
+              href={productLinks.repository}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View the source on GitHub ↗
+            </a>
+            <a
+              className="showcase-ghost"
+              href={productLinks.docs}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open the documentation ↗
+            </a>
+          </div>
+        </section>
+      </main>
+      <footer className="showcase-footer">
+        <span>© A11yPilot · deterministic keyboard-journey evidence</span>
+        <span>
+          <a href={productLinks.examples} target="_blank" rel="noreferrer">
+            Examples
+          </a>
+          <a href={productLinks.render} target="_blank" rel="noreferrer">
+            Render
+          </a>
+          <a href={productLinks.npm} target="_blank" rel="noreferrer">
+            npm
+          </a>
+        </span>
+      </footer>
+    </div>
+  );
+}
+
 function Overview({
   journeys,
   runs,
@@ -580,7 +1236,224 @@ function Overview({
           </div>
         </div>
       </section>
+      <ProductLanding navigate={navigate} />
     </>
+  );
+}
+
+function ProductLanding({ navigate }: { navigate: (p: Page) => void }) {
+  const features = [
+    ["Journey-first", "Test the task, not just the page.", "01"],
+    ["Evidence-backed", "See the moment a user gets stuck.", "02"],
+    ["CI-ready", "Ship JSON, HTML, or SARIF to your workflow.", "03"],
+    [
+      "Local by default",
+      "Keep specs and page content in your environment.",
+      "04",
+    ],
+  ];
+  const useCases = [
+    [
+      "Checkout & forms",
+      "Catch errors that look visible but never reach assistive technology.",
+    ],
+    [
+      "Dialogs & menus",
+      "Verify focus moves in, stays usable, and returns to the right trigger.",
+    ],
+    [
+      "CI regression gates",
+      "Compare runs and make new accessibility barriers visible in review.",
+    ],
+  ];
+  return (
+    <section
+      className="product-landing stagger-in"
+      aria-labelledby="product-heading"
+    >
+      <div className="showcase-hero">
+        <div className="product-intro">
+          <p className="eyebrow teal">A11YPILOT / ACCESSIBILITY EVIDENCE</p>
+          <h2 id="product-heading">
+            The shortest path from <em>stuck</em> to shipped.
+          </h2>
+          <p>
+            Turn the keyboard journeys your customers depend on into
+            deterministic, evidence-backed checks. A11yPilot pairs real Chromium
+            behavior with focused accessibility oracles, so fixes are easy to
+            find and easy to trust.
+          </p>
+          <div className="product-actions">
+            <button
+              className="primary-button"
+              onClick={() => navigate("journeys")}
+            >
+              Start a journey <span>→</span>
+            </button>
+            <a
+              className="secondary-button"
+              href={productLinks.repository}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Explore the source ↗
+            </a>
+          </div>
+        </div>
+        <div className="hero-proof" aria-label="Product proof points">
+          <span className="proof-line">
+            <b>01</b> real user path
+          </span>
+          <span className="proof-line">
+            <b>02</b> deterministic oracles
+          </span>
+          <span className="proof-line">
+            <b>03</b> reviewable evidence
+          </span>
+          <div className="proof-score">
+            <strong>6</strong>
+            <span>
+              WCAG-mapped
+              <br />
+              oracles included
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="process-section" aria-labelledby="process-heading">
+        <div className="section-intro">
+          <span className="eyebrow teal">THE FLOW</span>
+          <h3 id="process-heading">One journey. Four clear signals.</h3>
+          <p>From the first Tab press to a report your team can act on.</p>
+        </div>
+        <div className="process-diagram">
+          {[
+            ["01", "Journey", "Define the task"],
+            ["02", "Chromium", "Drive the real browser"],
+            ["03", "Oracles", "Evaluate behavior"],
+            ["04", "Evidence", "Share the proof"],
+          ].map(([number, title, text], index) => (
+            <React.Fragment key={title}>
+              <div className="process-node">
+                <span>{number}</span>
+                <strong>{title}</strong>
+                <small>{text}</small>
+              </div>
+              {index < 3 && (
+                <span className="process-arrow" aria-hidden="true">
+                  →
+                </span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+      <div className="feature-catalog" aria-label="A11yPilot features">
+        {features.map(([title, text, number]) => (
+          <article className="feature-card" key={title}>
+            <span className="feature-number">{number}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+      <div className="showcase-split">
+        <div className="use-case-block">
+          <span className="eyebrow teal">
+            BUILT FOR THE MOMENTS THAT MATTER
+          </span>
+          <h3>Accessibility is a journey, not a checkbox.</h3>
+          <div className="use-case-list">
+            {useCases.map(([title, text]) => (
+              <article key={title}>
+                <span>↗</span>
+                <div>
+                  <strong>{title}</strong>
+                  <p>{text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="code-card">
+          <div className="code-heading">
+            <span>QUICK START</span>
+            <span>journey.yml</span>
+          </div>
+          <pre>
+            <code>{`version: 1
+name: Recover from a form error
+start: http://localhost:3000
+steps:
+  - press: Tab
+  - expect: { role: textbox, name: Email }
+  - press: Enter`}</code>
+          </pre>
+          <a href={productLinks.examples} target="_blank" rel="noreferrer">
+            Browse journey examples ↗
+          </a>
+        </div>
+      </div>
+      <div className="ecosystem-grid">
+        <article className="ecosystem-card package-card">
+          <div className="card-heading">
+            <span className="eyebrow teal">NPM PACKAGES</span>
+            <span className="card-mark">&lt;/&gt;</span>
+          </div>
+          <h3>Use the pieces your workflow needs.</h3>
+          <p>Compose the engine, reporters, and CLI in your own test stack.</p>
+          <div className="package-links">
+            <a href={productLinks.cli} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/cli</code>
+              <span>CLI runner ↗</span>
+            </a>
+            <a href={productLinks.core} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/core</code>
+              <span>Journey engine ↗</span>
+            </a>
+            <a href={productLinks.reporters} target="_blank" rel="noreferrer">
+              <code>@a11ypilot/reporters</code>
+              <span>Evidence output ↗</span>
+            </a>
+          </div>
+        </article>
+        <article className="ecosystem-card deploy-card">
+          <div className="card-heading">
+            <span className="eyebrow teal">DEPLOYMENT CONTEXT</span>
+            <span className="render-badge">render</span>
+          </div>
+          <h3>Preview, review, and deploy with clarity.</h3>
+          <p>
+            Keep the dashboard close to the app you ship. A11yPilot works
+            locally and fits cleanly into Render-hosted workflows.
+          </p>
+          <div className="deploy-links">
+            <a href={productLinks.render} target="_blank" rel="noreferrer">
+              Read Render deployment docs ↗
+            </a>
+            <a href={productLinks.docs} target="_blank" rel="noreferrer">
+              Read deployment notes ↗
+            </a>
+          </div>
+        </article>
+      </div>
+      <div className="cta-strip">
+        <div>
+          <strong>Make the next release easier to use.</strong>
+          <span>
+            Open source, local-first, and ready for your existing test stack.
+          </span>
+        </div>
+        <div className="cta-links">
+          <button className="primary-button" onClick={() => navigate("docs")}>
+            Read the docs <span>→</span>
+          </button>
+          <a href={productLinks.npm} target="_blank" rel="noreferrer">
+            Browse npm ↗
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
 function Metric({

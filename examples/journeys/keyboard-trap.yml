@@ -1,0 +1,10 @@
+version: 1
+name: Keyboard focus leaves the trap region
+start: http://127.0.0.1:4174/
+options:
+  maxTabStops: 8
+  timeoutMs: 5000
+steps:
+  - expect:
+      role: button
+      name: "After trap"

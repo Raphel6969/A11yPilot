@@ -1,71 +1,67 @@
 # ♿ A11yPilot
 
-> **Keyboard journey evidence for teams that ship accessible interfaces.**
+> **Deterministic keyboard-journey accessibility evidence for real product flows.**
 
 [![CI](https://github.com/Raphel6969/A11yPilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Raphel6969/A11yPilot/actions/workflows/ci.yml)
-[![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Playwright](https://img.shields.io/badge/browser-Playwright-2ead33?logo=playwright&logoColor=white)](https://playwright.dev/)
-[![License](https://img.shields.io/badge/license-not%20yet%20published-lightgrey)](#project-status)
+[![Node](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Render](https://img.shields.io/badge/deploy-Render-46e3b7?logo=render&logoColor=white)](https://render.com/)
 
-A11yPilot runs repeatable, keyboard-only journeys in a real Chromium browser. It checks whether a person can move through important UI flows using `Tab`, type into reachable controls, activate controls with `Enter`, and navigate between pages. It produces evidence-ready JSON, HTML, and SARIF reports.
+A11yPilot turns important user journeys into repeatable keyboard-accessibility checks. It drives a real Chromium browser through Playwright, records focus behavior and evidence, evaluates deterministic WCAG-mapped oracles, and produces JSON, HTML, and SARIF reports.
 
-It is a focused complement to automated rule scanners, screen-reader testing, visual testing, and manual accessibility review. **It is not a WCAG, ADA, or EAA certification tool.**
+It is designed to complement axe, screen-reader testing, manual review, and visual testing. **A passing run is not WCAG, ADA, or EAA certification.**
+
+## 🧭 Start here
+
+| Want to…                                   | Go to                                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| See the product in action                  | [`examples/demo-site`](examples/demo-site) and [`examples/journeys`](examples/journeys)                                             |
+| Install the command-line runner            | [`@a11ypilot/cli` on npm](https://www.npmjs.com/package/@a11ypilot/cli) · [package guide](packages/cli/README.md)                   |
+| Embed the engine in Playwright code        | [`@a11ypilot/core` on npm](https://www.npmjs.com/package/@a11ypilot/core) · [package guide](packages/core/README.md)                |
+| Generate JSON, HTML, SARIF, or diff output | [`@a11ypilot/reporters` on npm](https://www.npmjs.com/package/@a11ypilot/reporters) · [package guide](packages/reporters/README.md) |
+| Run the dashboard locally                  | [Quick start](#-quick-start)                                                                                                        |
+| Deploy the dashboard                       | [Render Web Service](#render-web-service-recommended)                                                                               |
 
 ---
 
-## 📚 Contents
+## 🚀 What is included
 
-- [Why teams use it](#-why-teams-use-it)
-- [What ships today](#-what-ships-today)
-- [Requirements](#-requirements)
-- [Quick start](#-quick-start)
-- [Run the included demo](#-run-the-included-demo)
-- [Test any website](#-test-any-website)
-- [Journey file format](#-journey-file-format)
-- [Reports and exit codes](#-reports-and-exit-codes)
-- [How a real development team uses it](#-how-a-real-development-team-uses-it)
-- [CI and GitHub Actions](#-ci-and-github-actions)
-- [Docker](#-docker)
-- [Troubleshooting](#-troubleshooting)
-- [Project layout](#-project-layout)
-- [Limitations and safe use](#-limitations-and-safe-use)
-- [Project status](#-project-status)
+| Area           | Ships today                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| Browser runner | Real Playwright Chromium with keyboard-only navigation                                               |
+| Journey format | Strict YAML validation with accessible role/name targets                                             |
+| Oracles        | Reachability, keyboard traps, focus-visible, focus-return, error-identification, status-announcement |
+| Evidence       | Screenshots, accessibility-tree JSON when available, focus traces, error/status evidence             |
+| Reports        | JSON, HTML, SARIF, baseline diff summaries                                                           |
+| Baselines      | New, fixed, unchanged classification and `--fail-on` gating                                          |
+| Library        | `@a11ypilot/core`, `@a11ypilot/reporters`, `@a11ypilot/cli` workspace packages                       |
+| Demo           | Broken/fixed seeded site with real Chromium regression checks                                        |
+| Dashboard      | Private Vite/React product demo                                                                      |
+| Deployment     | Docker image and Render Web Service on `deploy/render`                                               |
 
-## 🎯 Why teams use it
+### Current oracle catalog
 
-Many accessibility defects are not caught by static rules alone. A dialog may exist but be impossible to reach, a checkout button may be skipped in the tab order, or a form control may expose the wrong accessible name. A11yPilot turns those important user flows into small, reviewable files that can run locally and in pull requests.
+| Oracle                 | WCAG  | Detects                                                     |
+| ---------------------- | ----- | ----------------------------------------------------------- |
+| `reachability`         | 2.1.1 | A target cannot be reached with `Tab`                       |
+| `no-keyboard-trap`     | 2.1.2 | Focus repeats across consecutive keyboard stops             |
+| `focus-return`         | 2.4.3 | Dialog focus does not return to its trigger                 |
+| `focus-visible`        | 2.4.7 | Focused element does not match `:focus-visible`             |
+| `error-identification` | 3.3.1 | Invalid fields lack identifiable or associated errors       |
+| `status-announcement`  | 4.1.3 | Status text lacks semantic/live/focus announcement evidence |
 
-The core workflow is:
+---
 
-```text
-journey.yml → Playwright + Chromium → keyboard observations → report + exit code
-```
+## ⚡ Quick start
 
-## ✨ What ships today
+### Requirements
 
-| Capability | What it does |
-| --- | --- |
-| 🧭 Accessible target lookup | Resolves controls by ARIA role and accessible name instead of brittle CSS selectors. |
-| ⌨️ Keyboard navigation | Advances with real `Tab` key presses and records every observed focus stop. |
-| ✍️ Text entry | Reaches a named textbox or control and types the requested text. |
-| ▶️ Keyboard activation | Reaches a named control and activates it with `Enter`. |
-| 🌐 Page navigation | Supports `goto` steps and a journey start URL. |
-| 📸 Browser bridge | Uses Playwright's real Chromium browser; optional screenshots are available in the runner bridge. |
-| 📄 Evidence reports | Emits JSON, HTML, or SARIF output for humans and CI tooling. |
-| ✅ Journey validation | Validates YAML against a strict Zod schema before execution. |
-| 🖥️ Demo dashboard | Includes a Vite/React UI for exploring journeys, run history, reports, settings, and documentation. |
-| 🐳 Reproducible container | Includes a Dockerfile based on the official Playwright image. |
+- Node.js `20.18.1` (pinned in `.nvmrc`)
+- npm 10+
+- Chromium; install it with the command below
+- A local, staging, or test website you are authorized to test
 
-Current runner actions are `goto`, `expect`, `type`, `activate`, and `press`. The schema also reserves space for future assertions such as form errors, status messages, and snapshots; those are not yet executed by the MVP runner.
-
-## 🧰 Requirements
-
-- **Node.js 20 or newer** — the repository pins the major version in `.nvmrc`.
-- **npm 10 or newer**.
-- **Chromium dependencies** — installed automatically by `npm run playwright:install -- --with-deps` on Linux CI, or provided by the Docker image.
-- A website running locally or at a test/staging URL that you are authorized to test.
-
-## 🚀 Quick start
+### Install
 
 ```bash
 git clone https://github.com/Raphel6969/A11yPilot.git
@@ -73,53 +69,107 @@ cd A11yPilot
 
 npm ci
 npm run playwright:install
+```
+
+On Linux CI or a bare Linux machine:
+
+```bash
+npm run playwright:install -- --with-deps
+```
+
+### Open the dashboard
+
+```bash
 npm run dev
 ```
 
-Open the Vite URL printed in the terminal to explore the A11yPilot dashboard.
+Open the Vite URL printed in the terminal, normally `http://localhost:5173`.
 
-For a production-like build:
+### Run the full local verification loop
 
 ```bash
+npm run typecheck
+npm run lint
+npm run test:all
 npm run build
-npm run preview
 ```
 
-## 🧪 Run the included demo
-
-The repository contains `journey.example.yml`, which checks that the demo's **Run this journey** button is reachable by keyboard.
-
-Run the complete real-browser check:
+The repository provides one canonical test command:
 
 ```bash
-npm ci
-npm run playwright:install
-npm run test:e2e
+npm run test:ci
 ```
 
-`test:e2e` builds the CLI and UI, starts the built UI on a free local port, waits for it to respond, launches headless Chromium, runs the sample journey, prints the result, and shuts down the preview server.
+The same command is available as `make test` on systems with GNU Make. Run it after installation and Chromium setup. The suite is offline-capable: it uses local fixtures and does not fetch websites or require credentials.
 
-To watch Chromium instead of running headlessly:
+For local environment overrides:
 
 ```bash
-npm run build:cli
-node dist/src/cli.js run journey.example.yml --headed
+cp .env.example .env
 ```
 
-## 🌍 Test any website
+`.env.example` contains non-secret settings only. Never commit `.env`, credentials, tokens, cookies, or production evidence.
 
-### 1. Start the site under test
+---
 
-Start your own application in a test environment. For example:
+## 🎬 Best product demo
+
+The strongest demo is the seeded broken-versus-fixed regression suite:
 
 ```bash
-cd ../my-store
-npm run dev -- --host 127.0.0.1
+npm run test:demo
 ```
 
-Assume it is available at `http://127.0.0.1:3000/checkout`.
+It launches a local demo server and runs the built CLI in real Chromium against both variants:
 
-### 2. Create a journey file
+```text
+PASS broken/modal-focus-return.yml: fail
+PASS broken/keyboard-trap.yml: fail
+PASS broken/error-identification.yml: fail
+PASS broken/status-announcement.yml: fail
+
+PASS fixed/modal-focus-return.yml: pass
+PASS fixed/keyboard-trap.yml: pass
+PASS fixed/error-identification.yml: pass
+PASS fixed/status-announcement.yml: pass
+```
+
+This demonstrates the product claim clearly: the same deterministic checks fail on seeded defects and pass on the corrected implementation.
+
+The demo sources are in:
+
+```text
+examples/demo-site/broken/index.html
+examples/demo-site/fixed/index.html
+examples/journeys/
+```
+
+---
+
+## 🧭 Test any website
+
+### Common use cases
+
+- **Checkout and signup:** prove that fields, validation errors, and submit actions remain reachable.
+- **Dialogs and menus:** verify focus enters the component, Escape closes it, and focus returns to the trigger.
+- **Regression gates:** preserve accepted findings in a baseline and fail CI only for newly introduced serious findings.
+- **Design-system release checks:** run the same journeys against seeded broken/fixed examples before publishing components.
+- **Evidence for review:** attach HTML for humans, JSON for automation, SARIF for code scanning, and screenshots/AX snapshots from the library path.
+
+Browse the seeded workflows in [`examples/journeys`](examples/journeys), then run the broken/fixed demo with `npm run test:demo`.
+
+### 1. Start the target website
+
+Start the application you own or are authorized to test:
+
+```bash
+cd ../my-product
+npm run dev
+```
+
+Assume it runs at `http://127.0.0.1:3000`.
+
+### 2. Write a journey
 
 Create `journeys/checkout.yml`:
 
@@ -133,224 +183,362 @@ options:
   timeoutMs: 5000
 
 steps:
-  - expect:
-      role: textbox
-      name: "Email"
+  - type:
+      target:
+        role: textbox
+        name: Email
+      text: person@example.com
 
   - type:
       target:
         role: textbox
-        name: "Email"
-      text: "person@example.com"
-
-  - expect:
-      role: textbox
-      name: "Card number"
-
-  - type:
-      target:
-        role: textbox
-        name: "Card number"
+        name: Card number
       text: "4242424242424242"
-
-  - expect:
-      role: button
-      name: "Place order"
 
   - activate:
       role: button
-      name: "Place order"
+      name: Place order
+
+  - expectStatus:
+      role: status
+      containsText: Order placed
 ```
 
-Use the accessible role and accessible name that a real user would encounter. Prefer stable names such as `Email`, `Continue`, or `Place order`; do not use generated CSS classes or implementation-only IDs.
+Use accessible roles and names exposed to users, not CSS classes or generated IDs.
 
-### 3. Build and validate
+### 3. Validate it
 
 ```bash
 npm run build:cli
-node dist/src/cli.js validate journeys/checkout.yml
+node packages/cli/dist/cli.js validate journeys/checkout.yml
 ```
 
-Expected output:
+### 4. Run it
 
-```text
-Valid journey: journeys/checkout.yml
-```
-
-### 4. Run the journey
+Headless:
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml
+node packages/cli/dist/cli.js run journeys/checkout.yml
 ```
 
-Run in a visible browser while diagnosing a failure:
+Visible browser for debugging:
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml --headed
+node packages/cli/dist/cli.js run journeys/checkout.yml --headed
 ```
 
-The runner starts at `start`, presses `Tab` until each target is found or `maxTabStops` is exceeded, types or presses `Enter` where requested, and records the observed tab stops.
-
-## 📝 Journey file format
-
-Every file has:
-
-- `version: 1`
-- a human-readable `name`
-- a URL `start`
-- one or more `steps`
-- optional `options.maxTabStops` and `options.timeoutMs`
-
-Supported steps:
-
-```yaml
-steps:
-  # Navigate to another URL.
-  - goto: http://127.0.0.1:3000/account
-
-  # Require a keyboard-reachable target.
-  - expect:
-      role: link
-      name: "Account settings"
-
-  # Reach a target and type text.
-  - type:
-      target:
-        role: textbox
-        name: "Search"
-      text: "keyboard accessibility"
-
-  # Reach a target and press Enter.
-  - activate:
-      role: button
-      name: "Search"
-
-  # Send a keyboard key without resolving a target.
-  - press:
-      target:
-        role: textbox
-        name: "Search"
-      key: Enter
-```
-
-Each step must contain exactly one action. `role` and `name` are required for target-based steps. `maxTabStops` prevents an infinite search when the target is not reachable.
-
-## 📊 Reports and exit codes
-
-### JSON
+With evidence:
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml \
-  --format json \
-  --output artifacts/checkout.json
-```
-
-Best for storing complete machine-readable run data.
-
-### HTML
-
-```bash
-node dist/src/cli.js run journeys/checkout.yml \
+node packages/cli/dist/cli.js run journeys/checkout.yml \
   --format html \
   --output artifacts/checkout.html
 ```
 
-Best for sharing evidence with product, QA, design, and accessibility reviewers.
+To write screenshots and accessibility snapshots, use the library API with `evidenceDir`, or add the CLI evidence flag when that CLI surface is enabled in your release branch.
+
+---
+
+## 📝 Journey actions
+
+### Reachability
+
+```yaml
+- expect:
+    role: button
+    name: Continue
+```
+
+### Type
+
+```yaml
+- type:
+    target:
+      role: textbox
+      name: Search
+    text: accessibility
+```
+
+### Activate
+
+```yaml
+- activate:
+    role: button
+    name: Search
+```
+
+### Press a key
+
+```yaml
+- press:
+    target:
+      role: textbox
+      name: Search
+    key: Enter
+```
+
+### Dialog focus return
+
+```yaml
+- expectDialog:
+    opensFrom:
+      role: button
+      name: Help
+    closesWith: Escape
+    focusReturns: true
+```
+
+### Error identification
+
+```yaml
+- expectError:
+    field:
+      role: textbox
+      name: Email
+    announced: true
+```
+
+### Status announcement
+
+Exact text:
+
+```yaml
+- expectStatus:
+    role: status
+    text: Profile saved
+```
+
+Contains text:
+
+```yaml
+- expectStatus:
+    containsText: saved
+```
+
+Each step must contain exactly one action. `maxTabStops` limits the search so a broken flow cannot loop forever.
+
+---
+
+## 📊 Reports
+
+### JSON
+
+```bash
+node packages/cli/dist/cli.js run journeys/checkout.yml \
+  --format json \
+  --output artifacts/checkout.json
+```
+
+### HTML
+
+```bash
+node packages/cli/dist/cli.js run journeys/checkout.yml \
+  --format html \
+  --output artifacts/checkout.html
+```
 
 ### SARIF
 
 ```bash
-node dist/src/cli.js run journeys/checkout.yml \
+node packages/cli/dist/cli.js run journeys/checkout.yml \
   --format sarif \
   --output artifacts/checkout.sarif
 ```
 
-Best for feeding findings into code-scanning or CI result systems.
+Exit status is non-zero when findings fail the configured gate. Reports include the deterministic finding, WCAG mapping, message, recommendation, fingerprint, and captured evidence where available.
 
-The command exits successfully when all reachability findings pass. It sets a non-zero exit code when the journey is blocked, so a pull request can fail when a critical keyboard path regresses.
+---
 
-## 👥 How a real development team uses it
+## 🧪 Baselines and regression gating
 
-### Product and accessibility planning
+Baselines are for legacy sites. They let a team accept existing findings while blocking new regressions.
 
-The team chooses a small set of high-value journeys instead of trying to automate every click:
+### Create a baseline
 
-- sign-up and account recovery,
-- login and multi-factor authentication,
-- checkout and payment,
-- search and filtering,
-- modal open/close flows,
-- validation and error recovery,
-- navigation through the primary application shell.
+```bash
+node packages/cli/dist/cli.js baseline \
+  artifacts/checkout.json \
+  --output a11y-baseline.json
+```
 
-Each journey is written as a plain YAML file and reviewed like product documentation. The `name` and step order explain the intended user experience.
+### Compare results
+
+```bash
+node packages/cli/dist/cli.js diff \
+  a11y-baseline.json \
+  artifacts/checkout-latest.json
+```
+
+Machine-readable diff:
+
+```bash
+node packages/cli/dist/cli.js diff \
+  a11y-baseline.json \
+  artifacts/checkout-latest.json \
+  --format json
+```
+
+### Gate only new serious findings
+
+```bash
+node packages/cli/dist/cli.js run journeys/checkout.yml \
+  --baseline a11y-baseline.json \
+  --fail-on serious \
+  --format sarif \
+  --output artifacts/checkout.sarif
+```
+
+Thresholds:
+
+```text
+critical
+serious
+moderate
+minor
+```
+
+Without a baseline, all failing findings at or above the threshold are evaluated. With a baseline, only new findings are evaluated.
+
+---
+
+## 📦 Use as a library
+
+The `0.1.2` packages are published on npm. You can use them directly or work from this repository:
+
+```bash
+npm ci
+npm run build:cli
+npm run test:library
+```
+
+Published packages:
+
+- [`@a11ypilot/core`](https://www.npmjs.com/package/@a11ypilot/core)
+- [`@a11ypilot/reporters`](https://www.npmjs.com/package/@a11ypilot/reporters)
+- [`@a11ypilot/cli`](https://www.npmjs.com/package/@a11ypilot/cli)
+
+Package documentation: [`core`](packages/core/README.md), [`reporters`](packages/reporters/README.md), and [`cli`](packages/cli/README.md).
+
+Install the CLI with:
+
+```bash
+npm install --save-dev @a11ypilot/cli
+```
+
+Example programmatic usage:
+
+```ts
+import { chromium } from "playwright";
+import { defaultOracles, loadJourney, runJourney } from "@a11ypilot/core";
+import { htmlReport, jsonReport, sarifReport } from "@a11ypilot/reporters";
+import { writeFile } from "node:fs/promises";
+
+const loaded = await loadJourney("journeys/checkout.yml");
+const browser = await chromium.launch();
+const page = await browser.newPage();
+
+const result = await runJourney(page, loaded, {
+  oracles: defaultOracles,
+  evidenceDir: "artifacts/checkout",
+});
+
+console.log(result.status, result.findings.length);
+console.log(jsonReport(result));
+await writeFile("artifacts/checkout.html", htmlReport(result));
+await writeFile("artifacts/checkout.sarif", sarifReport(result));
+
+await browser.close();
+```
+
+The three packages can also be used together in a small CI script:
+
+```bash
+npm install --save-dev @a11ypilot/cli
+npx playwright install chromium
+npx a11ypilot validate journeys/checkout.yml
+npx a11ypilot run journeys/checkout.yml \
+  --format sarif --output artifacts/checkout.sarif
+```
+
+For application code that already owns a Playwright page, use core and reporters directly:
+
+```ts
+const result = await runJourney(page, loaded, {
+  oracles: defaultOracles,
+  evidenceDir: "artifacts/checkout-evidence",
+});
+
+await writeFile("artifacts/checkout.json", jsonReport(result));
+await writeFile("artifacts/checkout.html", htmlReport(result));
+await writeFile("artifacts/checkout.sarif", sarifReport(result));
+```
+
+Read the detailed package guides for API contracts, supported actions, evidence behavior, baseline APIs, and security boundaries:
+
+- [`packages/core/README.md`](packages/core/README.md)
+- [`packages/reporters/README.md`](packages/reporters/README.md)
+- [`packages/cli/README.md`](packages/cli/README.md)
+
+The next package milestone is `@a11ypilot/playwright`, which will reuse an existing Playwright test's `page`, auth state, mocks, and fixtures.
+
+---
+
+## 👥 How a real dev team uses it
+
+### Repository layout
+
+```text
+your-product/
+├── journeys/
+│   ├── signup.yml
+│   ├── login.yml
+│   ├── checkout.yml
+│   └── account-recovery.yml
+├── artifacts/
+└── a11y-baseline.json
+```
 
 ### Local development
 
-A developer starts the app, runs one focused journey, and uses `--headed` when a target cannot be reached:
-
 ```bash
-npm run build:cli
-node dist/src/cli.js run journeys/login.yml --headed --format html --output login-debug.html
+node packages/cli/dist/cli.js run journeys/login.yml --headed
 ```
 
-They inspect the tab-stop trace and fix the underlying markup, focus order, accessible name, or keyboard handler.
+Developers inspect focus traces and evidence while fixing markup, labels, focus management, dialogs, validation, and status messages.
 
 ### Pull requests
 
-The repository keeps journeys in a directory such as `journeys/`. A pull request that changes checkout markup runs the checkout journey and uploads the HTML/SARIF artifact. Reviewers see both the code change and the user-flow evidence.
+```bash
+node packages/cli/dist/cli.js run journeys/checkout.yml \
+  --baseline a11y-baseline.json \
+  --fail-on serious \
+  --format sarif \
+  --output artifacts/checkout.sarif
+```
 
-### Continuous integration
+### CI
 
-The included GitHub Actions workflow runs:
+The repository's workflow runs:
 
 1. `npm ci`
 2. Chromium installation with Linux dependencies
-3. TypeScript checks
-4. formatting checks
-5. unit and UI tests
-6. real Playwright journey testing
-7. production build
-8. Docker build
+3. typecheck
+4. formatting check
+5. unit/UI/library/baseline/demo/E2E tests
+6. production build
+7. Docker build
 
-For a separate product repository, start the product server before invoking A11yPilot:
+### Release review
 
-```yaml
-- run: npm ci
-- run: npx playwright install --with-deps chromium
-- run: npm run build:cli
-- run: npm run run:journey -- journeys/checkout.yml --format sarif --output checkout.sarif
-```
+Teams archive HTML/SARIF/JSON artifacts for critical flows and use `diff` to show fixed, new, and unchanged findings between releases.
 
-The exact server startup command depends on the product. A11yPilot intentionally tests an already-running authorized site rather than guessing how every application should be started.
+---
 
-### Release and regression tracking
+## 🐳 Docker and Render deployment
 
-Teams archive reports from important branches or releases, compare the tab-stop traces when keyboard order changes, and keep a small regression suite of journeys that represent real customer outcomes.
+The repository includes a Docker runtime that serves the dashboard on port `4173`.
 
-## 🤖 CI and GitHub Actions
-
-The project's own workflow is in `.github/workflows/ci.yml`. Run the same important checks locally:
-
-```bash
-npm run typecheck
-npm run lint
-npm run test:all
-npm run build
-docker build -t a11ypilot:ci .
-```
-
-On Linux, install the browser and native dependencies explicitly:
-
-```bash
-npm run playwright:install -- --with-deps
-```
-
-## 🐳 Docker
-
-The Dockerfile uses the official Playwright image, which includes Chromium and the Linux libraries needed to launch it.
-
-Build and run the dashboard:
+### Local Docker
 
 ```bash
 docker build -t a11ypilot:local .
@@ -359,87 +547,155 @@ docker run --rm -p 4173:4173 a11ypilot:local
 
 Open <http://localhost:4173>.
 
-The image also contains the built CLI. For a journey that targets a service reachable from inside the container, run a command such as:
+### Render web service (recommended)
 
-```bash
-docker run --rm --network host \
-  a11ypilot:local \
-  node dist/src/cli.js run /workspace/journeys/checkout.yml
+Create a standard Render **Web Service** from the `deploy/render` branch. The deploy branch includes a Dockerfile configured for the dashboard:
+
+```text
+Branch: deploy/render
+Service: a11ypilot
+Health check: /
+Port: 4173
 ```
 
-In practice, mount or copy your journey files into the image and ensure the URL is reachable from the container network. Never put passwords, tokens, cookies, or personal data in journey files or reports.
+Deploy it on Render:
+
+1. Push the `deploy/render` branch to GitHub.
+2. In Render, choose **New → Web Service**.
+3. Connect `Raphel6969/A11yPilot`.
+4. Select the `deploy/render` branch.
+5. Choose **Docker** as the runtime.
+6. Set Dockerfile path to `./Dockerfile` and Docker context to `.`.
+7. Set the health check path to `/`.
+8. Create the service.
+9. Wait for the Docker build and health check.
+10. Open the generated Render URL.
+
+The current Render deployment is the dashboard/demo container. It is not yet a hosted multi-user runner or remote job API. Do not put secrets into the image or repository.
+
+### Render service settings
+
+Use these values in the Web Service form:
+
+```text
+Environment: Docker
+Branch: deploy/render
+Dockerfile: ./Dockerfile
+Docker context: .
+Health check path: /
+```
+
+Render detects the exposed port from the Docker image; the application listens on `4173`.
+
+The Docker build excludes local `.env` files so secrets cannot be copied into the image.
+
+---
+
+## 🤖 GitHub Actions
+
+The current CI workflow is `.github/workflows/ci.yml`.
+
+For a product repository, the essential shape is:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version-file: .nvmrc
+    cache: npm
+- run: npm ci
+- run: npx playwright install --with-deps chromium
+- run: npm run build:cli
+- run: node packages/cli/dist/cli.js run journeys/checkout.yml --baseline a11y-baseline.json --fail-on serious --format sarif --output checkout.sarif
+```
+
+Start the product's own test server before running the journey. A11yPilot intentionally does not guess how a Next.js, Rails, Django, Vite, or other application should start.
+
+---
+
+## 🗂️ Project layout
+
+```text
+packages/core/              # loader, runner, evidence, oracles, baseline API
+packages/reporters/         # JSON, HTML, SARIF, diff reports
+packages/cli/               # a11ypilot validate/run/baseline/diff
+examples/demo-site/         # seeded broken and fixed HTML
+examples/journeys/          # demo journeys
+scripts/                    # E2E, demo, library, and baseline smoke tests
+src/                        # private dashboard/demo application
+Dockerfile                  # reproducible Playwright image
+render.yaml                 # Render Docker Blueprint
+```
+
+---
+
+## 🎥 Premium showcase video
+
+The requested local `brag` skill is installed at:
+
+```text
+.agents/skills/brag
+```
+
+It is intentionally ignored and not committed with application source. The skill can storyboard and render a 15–25 second Hyperframes video with music, SFX, polished transitions, and share copy.
+
+Recommended creative direction:
+
+```text
+Tone: polished cinematic developer-tool launch
+Format: landscape
+Duration: 20 seconds
+Hook: “axe checks the page. A11yPilot checks the journey.”
+Reveal: real keyboard focus moving through a form
+Highlights: broken vs fixed modal focus, validation error evidence, baseline diff
+Outro: “Ship the journey. Keep the evidence.”
+```
+
+Use the installed `/brag` workflow from an agent environment that has the Hyperframes domain skills available. Keep generated output under `brag-output*/`; it is ignored by Git.
+
+Important: a video is marketing evidence, not a substitute for the executable regression suite.
+
+---
+
+## ⚠️ Scope and security
+
+- Test only sites you own or are authorized to test.
+- Do not put passwords, cookies, tokens, payment data, or personal data into journeys or reports.
+- Chromium is the initial browser target.
+- A11yPilot does not certify WCAG, ADA, or EAA conformance.
+- The current release does not include hosted authentication, scheduled monitoring, or a multi-user job queue.
+- Baselines should be reviewed like code; do not blindly accept new findings.
 
 ## 🛠️ Troubleshooting
 
-### `Executable doesn't exist` from Playwright
-
-Install Chromium:
+### Playwright browser missing
 
 ```bash
 npm run playwright:install
 ```
 
-On Ubuntu or another Linux host:
+Linux:
 
 ```bash
 npm run playwright:install -- --with-deps
 ```
 
-### The target is never reached
+### Target not found
 
-Check:
+Check the URL, role, accessible name, authentication state, consent screens, and `maxTabStops`. Run with `--headed`.
 
-1. The target page is loaded and reachable from the machine running the command.
-2. The role is correct, for example `button`, `link`, or `textbox`.
-3. The accessible name matches the visible label or `aria-label`.
-4. The target is not behind an unhandled authentication or consent screen.
-5. `maxTabStops` is high enough for the page.
-6. The journey starts from the correct URL and uses `goto` when navigation is required.
+### Render deployment fails
 
-Run with `--headed` and use an accessibility inspector in your browser to confirm the role and name.
-
-### The app is not running
-
-A11yPilot is a browser runner, not an application server manager. Start the site under test first, then run the journey. The included `test:e2e` command is special: it starts the repository's own built demo automatically.
-
-### A journey fails after a UI redesign
-
-That may be a real accessibility regression or an intentional label change. Review the report and update the journey only when the intended user-facing interaction changed.
-
-## 🗂️ Project layout
-
-```text
-src/
-├── cli.ts                  # validate and run commands
-├── runner/                 # keyboard navigator and Playwright bridge
-├── spec/                   # YAML loading and Zod validation
-├── oracles/                # deterministic reachability findings
-├── reporters/              # JSON, HTML, and SARIF output
-├── main.tsx                # React demo/dashboard entry point
-└── styles.css              # dashboard styling
-scripts/run-e2e.mjs         # build, serve, and run the real-browser demo
-journey.example.yml         # sample journey
-Dockerfile                  # reproducible build/runtime image
-```
-
-## ⚠️ Limitations and safe use
-
-- Test only sites you own or are explicitly authorized to test.
-- Do not store secrets, credentials, cookies, payment data, or personal information in YAML files or generated reports.
-- Chromium is the initial browser target; cross-browser testing is not yet provided.
-- Keyboard reachability is one important accessibility dimension, not a full audit.
-- A passing journey does not prove WCAG conformance.
-- Authenticated journeys need a deliberate, redacted secrets strategy before being added to CI.
-- The runner currently focuses on keyboard navigation and does not replace real screen-reader, switch, touch, zoom, contrast, or manual testing.
+Confirm the service uses the `deploy/render` branch, Dockerfile path `./Dockerfile`, and health check `/`. The Render build must be able to run `npm ci` and Docker must be available in the Render build environment.
 
 ## 📌 Project status
 
-A11yPilot is an MVP/buildathon project. The current public repository is:
+This is an MVP/buildathon project. The next production milestones are:
 
-<https://github.com/Raphel6969/A11yPilot>
+1. push and verify the deploy branch,
+2. ship `@a11ypilot/playwright`,
+3. ship a reusable GitHub Action,
+4. add authenticated `storageState` journeys,
+5. add hosted runs and scheduled monitoring only after the local/library contracts stabilize.
 
-Useful next steps include richer assertions, authenticated-flow handling, screenshot evidence, cross-browser projects, stronger artifact retention, and a published package release.
-
-## 📄 License
-
-No published license has been added yet. Treat the repository as source code for evaluation and obtain permission before redistributing it.
+Repository: <https://github.com/Raphel6969/A11yPilot>

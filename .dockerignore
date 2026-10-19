@@ -7,3 +7,10 @@ coverage
 playwright-report
 test-results
 *.log
+.env
+.env.*
+!.env.example
+.agents
+.claude
+skills-lock.json
+brag-output*

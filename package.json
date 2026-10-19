@@ -1,36 +1,45 @@
 {
-  "name": "@a11ypilot/cli",
+  "name": "a11ypilot",
+  "private": true,
   "version": "0.1.0",
   "description": "Keyboard journey accessibility evidence CLI",
   "type": "module",
-  "bin": {
-    "a11ypilot": "dist/cli.js"
-  },
+  "workspaces": [
+    "packages/core",
+    "packages/reporters",
+    "packages/cli"
+  ],
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "npm run build:cli && npm run build:ui",
-    "build:cli": "tsc -p tsconfig.json",
+    "build:core": "npm run build --workspace=@a11ypilot/core",
+    "build:reporters": "npm run build --workspace=@a11ypilot/reporters",
+    "build:cli": "npm run build:core && npm run build:reporters && npm run build --workspace=@a11ypilot/cli",
     "build:ui": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "npm run typecheck:cli && npm run typecheck:ui",
-    "typecheck:cli": "tsc --noEmit -p tsconfig.json",
+    "typecheck:cli": "npm run build:cli && npm run typecheck --workspace=@a11ypilot/core && npm run typecheck --workspace=@a11ypilot/reporters && npm run typecheck --workspace=@a11ypilot/cli",
     "typecheck:ui": "tsc --noEmit -p tsconfig.app.json",
-    "lint": "prettier --check src tests",
+    "lint": "prettier --check src tests packages scripts examples",
     "test": "vitest run tests/unit",
+    "test:library": "npm run build:cli && node scripts/smoke-library.mjs",
+    "test:baseline": "npm run build:cli && node scripts/smoke-baseline.mjs",
+    "test:demo": "npm run build:cli && node scripts/run-demo-regression.mjs",
     "test:ui": "vitest run src/App.test.tsx",
     "test:e2e": "npm run build:cli && npm run build:ui && node scripts/run-e2e.mjs",
-    "test:all": "npm test && npm run test:ui && npm run test:e2e",
+    "test:all": "npm test && npm run test:ui && npm run test:library && npm run test:baseline && npm run test:demo && npm run test:e2e",
+    "test:ci": "npm run test:all",
     "playwright:install": "playwright install chromium",
-    "format": "prettier --write src tests",
+    "format": "prettier --write src tests packages scripts examples",
     "dev": "vite",
     "preview": "vite preview --outDir dist-ui",
-    "validate:journey": "node dist/src/cli.js validate",
-    "run:journey": "node dist/src/cli.js run",
+    "validate:journey": "node packages/cli/dist/cli.js validate",
+    "run:journey": "node packages/cli/dist/cli.js run",
     "docker:check": "docker build -t a11ypilot:local ."
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.18.1"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.3",

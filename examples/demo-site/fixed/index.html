@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A11yPilot keyboard demo (fixed)</title>
+    <style>
+      :focus-visible {
+        outline: 3px solid #0b63ce;
+        outline-offset: 3px;
+      }
+      body {
+        font:
+          1rem/1.5 system-ui,
+          sans-serif;
+        margin: 2rem auto;
+        max-width: 46rem;
+        padding: 0 1rem;
+      }
+      button {
+        font: inherit;
+        margin: 0.25rem;
+        padding: 0.5rem 0.75rem;
+      }
+      dialog {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        max-width: 30rem;
+      }
+      .trap-demo {
+        border: 2px dashed #287a3d;
+        margin-top: 2rem;
+        padding: 1rem;
+      }
+      .form-demo {
+        border: 2px solid #287a3d;
+        margin-top: 2rem;
+        padding: 1rem;
+      }
+      label,
+      input {
+        display: block;
+        margin: 0.35rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Keyboard interaction demo</h1>
+      <p>
+        Use the journeys to check modal focus return and leaving a keyboard
+        trap.
+      </p>
+      <button id="open-dialog" type="button" aria-haspopup="dialog">
+        Open help dialog
+      </button>
+      <section class="form-demo" aria-labelledby="form-heading">
+        <h2 id="form-heading">Profile form</h2>
+        <form id="profile-form">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            aria-describedby="email-error"
+          />
+          <p id="email-error">Enter a valid email address.</p>
+          <button id="save-profile" type="submit">Save profile</button>
+          <div id="save-status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+      <section class="trap-demo" aria-labelledby="trap-heading">
+        <h2 id="trap-heading">Keyboard trap</h2>
+        <p>
+          Tab should move from the first control to the control after this
+          section.
+        </p>
+        <button id="trap-start" type="button">Trap start</button>
+      </section>
+      <button id="after-trap" type="button">After trap</button>
+    </main>
+    <dialog id="help-dialog" aria-labelledby="dialog-heading">
+      <h2 id="dialog-heading">Keyboard help</h2>
+      <p>Press Escape to close this dialog.</p>
+      <button id="close-dialog" type="button">Close help</button>
+    </dialog>
+    <script>
+      const open = document.querySelector("#open-dialog");
+      const dialog = document.querySelector("#help-dialog");
+      const close = document.querySelector("#close-dialog");
+      open.addEventListener("click", () => {
+        dialog.showModal();
+        close.focus();
+      });
+      close.addEventListener("click", () => dialog.close());
+      document
+        .querySelector("#profile-form")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const email = document.querySelector("#email");
+          email.setAttribute("aria-invalid", "true");
+          document.querySelector("#save-status").textContent = "Saved";
+        });
+      dialog.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        dialog.close();
+        open.focus();
+      });
+
+      // The corrected component lets native Tab navigation leave the region.
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+version: 1
+name: Required email error is identified
+start: http://127.0.0.1:4174/
+options:
+  maxTabStops: 20
+  timeoutMs: 5000
+steps:
+  - expectError:
+      field:
+        role: textbox
+        name: Email
+      announced: true

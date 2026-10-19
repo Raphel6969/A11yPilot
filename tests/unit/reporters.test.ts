@@ -1,7 +1,9 @@
 import { expect, it } from "vitest";
-import { htmlReport } from "../../src/reporters/html.js";
-import { sarifReport } from "../../src/reporters/sarif.js";
-import { jsonReport } from "../../src/reporters/json.js";
+import {
+  htmlReport,
+  sarifReport,
+  jsonReport,
+} from "../../packages/reporters/src/index.js";
 const result = {
   schemaVersion: 1 as const,
   runId: "run",

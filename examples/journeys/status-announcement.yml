@@ -1,0 +1,17 @@
+version: 1
+name: Profile save announces status
+start: http://127.0.0.1:4174/
+options:
+  maxTabStops: 20
+  timeoutMs: 5000
+steps:
+  - type:
+      target:
+        role: textbox
+        name: Email
+      text: user@example.com
+  - activate:
+      role: button
+      name: Save profile
+  - expectStatus:
+      containsText: Saved

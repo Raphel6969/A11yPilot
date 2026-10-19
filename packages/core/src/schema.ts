@@ -3,6 +3,13 @@ export const targetSchema = z
   .object({ role: z.string().min(1), name: z.string().min(1) })
   .strict();
 const targetStep = z.object({ target: targetSchema }).strict();
+const expectDialogStep = z
+  .object({
+    opensFrom: targetSchema,
+    closesWith: z.string().min(1),
+    focusReturns: z.boolean(),
+  })
+  .strict();
 const rawStepSchema = z
   .object({
     goal: z.string().optional(),
@@ -10,14 +17,25 @@ const rawStepSchema = z
     expect: targetSchema.optional(),
     type: targetStep.extend({ text: z.string() }).optional(),
     activate: targetSchema.optional(),
+    expectDialog: expectDialogStep.optional(),
     press: targetStep.extend({ key: z.string().min(1) }).optional(),
     expectError: z
       .object({ field: targetSchema, announced: z.boolean().optional() })
       .strict()
       .optional(),
     expectStatus: z
-      .object({ text: z.string().min(1), role: z.string().optional() })
+      .object({
+        role: z.string().min(1).optional(),
+        text: z.string().min(1).optional(),
+        containsText: z.string().min(1).optional(),
+      })
       .strict()
+      .refine(
+        (value) => value.text !== undefined || value.containsText !== undefined,
+        {
+          message: "expectStatus requires text or containsText",
+        },
+      )
       .optional(),
     snapshot: z.boolean().optional(),
   })
@@ -28,6 +46,7 @@ const rawStepSchema = z
       "expect",
       "type",
       "activate",
+      "expectDialog",
       "press",
       "expectError",
       "expectStatus",
@@ -54,6 +73,11 @@ export const journeySchema = z
   })
   .strict();
 export type Target = z.infer<typeof targetSchema>;
+export type StatusExpectation = {
+  role?: string;
+  text?: string;
+  containsText?: string;
+};
 export type RawStep = z.infer<typeof rawStepSchema>;
 export type Journey = z.infer<typeof journeySchema>;
 export type NormalizedStep = { id: string; goal?: string; action: RawStep };
