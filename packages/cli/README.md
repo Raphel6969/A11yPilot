@@ -13,7 +13,7 @@ npm install --save-dev @a11ypilot/cli
 npx playwright install chromium
 ```
 
-The package includes matching `@a11ypilot/core` and `@a11ypilot/reporters` `0.1.1` dependencies, `commander`, and Playwright `^1.48.0`. Node.js 20 or newer is supported. Install Chromium in the same environment that runs the command. In a repository checkout, build first with `npm run build:cli` and invoke `node packages/cli/dist/cli.js`.
+The package includes matching `@a11ypilot/core` and `@a11ypilot/reporters` `0.1.2` dependencies, `commander`, and Playwright `^1.48.0`. Node.js 20 or newer is supported. Install Chromium in the same environment that runs the command. In a repository checkout, build first with `npm run build:cli` and invoke `node packages/cli/dist/cli.js`.
 
 ## A realistic journey
 

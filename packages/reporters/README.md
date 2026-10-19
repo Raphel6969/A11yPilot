@@ -13,7 +13,7 @@ npm install @a11ypilot/reporters @a11ypilot/core playwright
 npx playwright install chromium
 ```
 
-Version `0.1.1` is built against `@a11ypilot/core` `0.1.1`. Reporters have no peer dependencies. Install core and a Playwright implementation to create a result first; reporters only format the object they receive.
+Version `0.1.2` is built against `@a11ypilot/core` `0.1.2`. Reporters have no peer dependencies. Install core and a Playwright implementation to create a result first; reporters only format the object they receive.
 
 ## Format a realistic run
 
@@ -63,7 +63,7 @@ import { diffJsonReport, diffSummaryReport } from "@a11ypilot/reporters";
 import { writeFile } from "node:fs/promises";
 
 // `result` is the JourneyResult returned by core's runJourney(...).
-const baseline = createBaseline(result, { toolVersion: "0.1.1" });
+const baseline = createBaseline(result, { toolVersion: "0.1.2" });
 const diff = diffResults(result, baseline);
 
 await writeFile("artifacts/checkout-diff.json", diffJsonReport(diff));

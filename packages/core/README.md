@@ -105,7 +105,7 @@ import {
 } from "@a11ypilot/core";
 import { writeFile } from "node:fs/promises";
 
-const baseline = createBaseline(result, { toolVersion: "0.1.1" });
+const baseline = createBaseline(result, { toolVersion: "0.1.2" });
 await writeFile("a11y-baseline.json", serializeBaseline(baseline));
 
 const diff = diffResults(result, baseline);

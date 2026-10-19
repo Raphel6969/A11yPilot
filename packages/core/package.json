@@ -1,6 +1,6 @@
 {
   "name": "@a11ypilot/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Journey loading, execution, results, and accessibility oracles for A11yPilot",
   "type": "module",
   "main": "dist/index.js",

@@ -403,7 +403,7 @@ Without a baseline, all failing findings at or above the threshold are evaluated
 
 ## 📦 Use as a library
 
-The `0.1.1` packages are published on npm. You can use them directly or work from this repository:
+The `0.1.2` packages are published on npm. You can use them directly or work from this repository:
 
 ```bash
 npm ci

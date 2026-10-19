@@ -1,6 +1,6 @@
 {
   "name": "@a11ypilot/reporters",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "JSON, HTML, and SARIF reporters for A11yPilot results",
   "type": "module",
   "main": "dist/index.js",
@@ -19,6 +19,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@a11ypilot/core": "0.1.1"
+    "@a11ypilot/core": "0.1.2"
   }
 }
